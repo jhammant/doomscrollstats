@@ -2,7 +2,7 @@
 Text platforms (X, YouTube): OCR text -> Nova Micro.
 Visual platforms (Instagram, TikTok): screenshots/frames -> Nova Lite (vision).
 Returns scoring + a full narrative read. Bedrock via IAM (no key). boto3 ships in the runtime."""
-import json, re, base64, time, boto3
+import json, re, base64, time, hashlib, boto3
 
 REGION = "us-east-1"
 MODEL_TEXT = "amazon.nova-micro-v1:0"
@@ -19,7 +19,18 @@ _bedrock = boto3.client("bedrock-runtime", region_name=REGION)
 _ddb = boto3.client("dynamodb", region_name=REGION)
 AGG_TABLE = "doomscroll-agg"
 
-def _stats(score):
+def _uh(ip):
+    """Short, stable, non-reversible per-visitor token — lets a live tail tell users apart without storing any PII."""
+    return hashlib.sha256(("ds" + (ip or "?")).encode()).hexdigest()[:8]
+
+def _log(evt, **kw):
+    """One greppable line per usage event, for `aws logs tail --filter-pattern USE`."""
+    try:
+        print("USE " + json.dumps({"evt": evt, **kw}, separators=(",", ":")))
+    except Exception:
+        pass
+
+def _stats(score, ip=""):
     """Anonymous aggregate: bucket the balance score, return how bubbled vs everyone. Stores only a counter."""
     try:
         score = max(0, min(100, int(score)))
@@ -35,6 +46,7 @@ def _stats(score):
         counts = [int(item.get("b" + str(i), {}).get("N", "0")) for i in range(10)]
         total = sum(counts) or 1
         more_bubbled = round(sum(counts[b + 1:]) / total * 100)  # feeds more balanced than you -> you're more bubbled than them
+        _log("score", score=score, pct=more_bubbled, n=total, u=_uh(ip))
         return _resp(200, {"moreBubbledThan": more_bubbled, "samples": total})
     except Exception as e:
         return _resp(200, {"moreBubbledThan": None, "samples": 0, "error": str(e)[:120]})
@@ -108,7 +120,7 @@ def lambda_handler(event, context):
             body = base64.b64decode(body).decode("utf-8")
         data = json.loads(body)
         if data.get("stat") is not None:
-            return _stats(data.get("stat"))
+            return _stats(data.get("stat"), ip)
         platform = str(data.get("platform", "x")).lower()
         if platform not in PLATFORM_FRAME:
             platform = "x"
@@ -152,6 +164,8 @@ def lambda_handler(event, context):
                     p["emo"] = "Curiosity"
         result["model"] = model
         result["platform"] = platform
+        _log("analyze", plat=platform, mode=("vision" if images else "text"),
+             posts=len(result.get("posts", []) or []), ai=result.get("aiSlopPct"), u=_uh(ip))
         return _resp(200, result)
     except Exception as e:
         return _resp(500, {"error": str(e)[:400]})
