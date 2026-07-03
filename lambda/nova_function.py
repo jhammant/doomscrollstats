@@ -83,6 +83,7 @@ SYSTEM_BASE = (
     "heat: most informational/promotional posts are 0.2-0.4; reserve >0.6 for genuinely angry/fearful/tribal content. "
     "For 'accounts', only give a non-zero lean when you genuinely have evidence — the account is well-known to you, OR its posts in this feed are clearly political. Otherwise use lean 0. "
     "In each account's 'note', state the basis honestly (e.g. 'well-known right-leaning outlet' vs 'inferred from one political post' vs 'not enough to tell'). Do not fake confidence about accounts you don't recognise. "
+    "Use the account unit that actually drives THIS platform: subreddits (e.g. r/antiwork) for Reddit, creators/handles for TikTok/YouTube/Instagram/X/LinkedIn, pages or groups for Facebook — list the specific ones you saw. Make each 'suggestions.do' fit the platform too (a subreddit to join for Reddit, a creator/account to follow, or a specific search query). "
     "Keep strings short and specific. 'suggestions' must be 2-4 concrete items, never placeholders. "
     "'bot'/'aiSlopPct' are honest guesses. Do not invent specific real handles you are unsure about."
 )

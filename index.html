@@ -363,9 +363,10 @@ var GA_ID = "";
     </div>
     <div class="engine-row">
       <span class="lbl">Read with</span>
-      <button class="eng" data-eng="local" aria-pressed="true">⚡ On-device <span class="sub2">quick · private, stays on your phone</span></button>
-      <button class="eng" data-eng="remote" aria-pressed="false">🧠 Sharper <span class="sub2">Nova · fuller read (sent to server)</span></button>
+      <button class="eng" data-eng="local" aria-pressed="true">⚡ Quick <span class="sub2">pattern-match on your phone</span></button>
+      <button class="eng" data-eng="remote" aria-pressed="false">🧠 Deep <span class="sub2">an AI (Amazon Nova, an LLM) reads it</span></button>
     </div>
+    <p id="engine-note" style="text-align:center;color:var(--muted);font-size:12px;margin:9px auto 0;max-width:460px;line-height:1.5">Pick one: <b>Quick</b> is instant &amp; fully private; <b>Deep</b> sends the text to an AI model for a much sharper read. You can also switch to the AI read <em>after</em> a Quick one.</p>
     <div class="proc" id="proc">
       <div class="ic" style="font-size:34px">🧠</div>
       <div class="bar"><i id="bar"></i></div>
@@ -479,7 +480,7 @@ var GA_ID = "";
       </div></div>
 
       <div class="nav-row"><button class="btn ghost" onclick="go('upload')" style="width:auto">← Analyse another feed</button>
-        <button class="btn ghost" onclick="exportData()" style="width:auto">⬇ Share my data (for testing)</button></div>
+        <button class="btn ghost" onclick="exportData()" style="width:auto">⬇ Download all my data</button></div>
     </div>
   </section>
 </div>
@@ -595,9 +596,11 @@ function go(v){
     const d=$("#drop"),a=$("#alt"),pr=$("#proc"),er=document.querySelector(".engine-row"),f=$("#file"),priv=document.querySelector(".drop .priv");
     if(d)d.style.display="block"; if(a)a.style.display="block"; if(pr)pr.classList.remove("on"); if(f)f.value="";
     const vis=(typeof VISUAL!=="undefined")&&VISUAL.has(PLATFORM);
-    if(er)er.style.display=vis?"none":"flex";        // no local/remote choice on visual platforms — always Nova vision
-    if(priv)priv.textContent=vis?"🔒 read by Nova, then discarded — never stored":"🔒 on-device by default · nothing is stored";
-    const sub=$("#upload-sub"); if(sub)sub.textContent=vis?"Your "+PLATFORM+" screenshots are read by Nova vision, then discarded.":"Read on your device (or by Nova if you pick Sharper) — nothing about you is stored.";
+    if(er)er.style.display=vis?"none":"flex";        // no Quick/Deep choice on visual platforms — always AI (Nova)
+    const en=document.querySelector("#engine-note"); if(en)en.style.display=vis?"none":"block";
+    const pn=(PLAT_INFO[PLATFORM]&&PLAT_INFO[PLATFORM].name)||"your";
+    if(priv)priv.textContent=vis?"🔒 read by an AI (Amazon Nova), then discarded — never stored":"🔒 nothing about you is stored";
+    const sub=$("#upload-sub"); if(sub)sub.textContent=vis?("Your "+pn+" screenshots are read by an AI (Amazon Nova), then discarded — nothing is stored."):"Read on your phone (Quick), or by an AI if you pick Deep — nothing about you is stored.";
   }
   window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -689,6 +692,7 @@ async function handleFiles(files){
       const rawText=await extractFromFiles(files);
       if(!rawText||rawText.replace(/\s/g,"").length<40){setProc("Couldn't read enough text.",100);
         setTimeout(()=>{endProc();toast("Not enough read — screenshots read best, or pick a sample.");},1300);return;}
+      LASTRAW=rawText;
       if(ENGINE==="remote"){setProc("sending to the Sharper reader (Nova)…",95);const nova=await novaAnalyse(rawText);if(nova){posts=novaToPosts(nova);report=novaReport(nova);SCOREDBY="Nova (remote)";}}
       if(!posts){posts=parsePosts(rawText);await deepEnrich(posts);report=localReport(posts);}
       if(posts.length<3){setProc("Couldn't read enough posts.",100);
@@ -735,7 +739,7 @@ function parsePosts(text){
 $$("#view-upload .chip").forEach(c=>c.addEventListener("click",()=>{analyse(PERSONAS[c.dataset.p].posts,PERSONAS[c.dataset.p].title);go("dash");}));
 $$("#view-upload .eng").forEach(b=>b.addEventListener("click",()=>{$$("#view-upload .eng").forEach(x=>x.setAttribute("aria-pressed","false"));b.setAttribute("aria-pressed","true");ENGINE=b.dataset.eng;}));
 async function analysePaste(){const raw=$("#pasteta").value;if(raw.replace(/\s/g,"").length<20){toast("Paste a few lines first");return;}
-  showProc();let posts=null,report=null;
+  showProc();LASTRAW=raw;let posts=null,report=null;
   if(ENGINE==="remote"){setProc("sending to Nova…",95);const nova=await novaAnalyse(raw);if(nova){posts=novaToPosts(nova);report=novaReport(nova);}}
   if(!posts){posts=classifyPaste(raw);await deepEnrich(posts);report=localReport(posts);}
   $("#proc").classList.remove("on");analyse(posts,"Your pasted feed",report);go("dash");}
@@ -919,14 +923,14 @@ function renderSpectrum(st){
   [["0","#3987e5"],["0.5","#8a8f97"],["1","#e66767"]].forEach(([o,c])=>el("stop",{offset:o,"stop-color":c},g));
   el("rect",{x:X(-.18),y:bar-9,width:X(.18)-X(-.18),height:30,rx:8,fill:"rgba(40,199,111,.10)",stroke:"rgba(40,199,111,.35)","stroke-dasharray":"3 3"},svg);
   el("rect",{x:mL,y:bar,width:pw,height:12,rx:6,fill:"url(#specgrad)"},svg);
-  SPEC.forEach(s=>{const t=el("text",{x:X(s.p),y:66,"font-size":"25","text-anchor":"middle"},svg);t.textContent=s.e;});
-  [["Far left",-1],["Left",-.5],["Center",0],["Right",.5],["Far right",1]].forEach(([lab,p])=>{const t=el("text",{x:X(p),y:150,fill:"var(--muted)","font-size":"10.5","text-anchor":"middle","font-weight":"600"},svg);t.textContent=lab;});
+  SPEC.forEach(s=>{const t=el("text",{x:X(s.p),y:64,"font-size":"28","text-anchor":"middle"},svg);t.textContent=s.e;});
+  [["← Left",-.68],["Centre",0],["Right →",.68]].forEach(([lab,p])=>{const t=el("text",{x:X(p),y:153,fill:"var(--muted)","font-size":"13.5","text-anchor":"middle","font-weight":"700"},svg);t.textContent=lab;});
   const tx=X(0);el("circle",{cx:tx,cy:bar+6,r:6,fill:"var(--muted)",stroke:"#04110f","stroke-width":2},svg);
-  const tl=el("text",{x:tx,y:bar+30,fill:"var(--good)","font-size":"10","font-weight":"700","text-anchor":"middle"},svg);tl.textContent="most feeds";
+  const tl=el("text",{x:tx,y:bar+30,fill:"var(--good)","font-size":"12","font-weight":"700","text-anchor":"middle"},svg);tl.textContent="most feeds";
   const nx=X(st.meanLean);
   el("line",{x1:nx,y1:84,x2:nx,y2:bar+12,stroke:"var(--accent)","stroke-width":2,"stroke-dasharray":"3 3"},svg);
   el("circle",{cx:nx,cy:bar+6,r:8.5,fill:"var(--accent)",stroke:"#04110f","stroke-width":2.5},svg);
-  const yl=el("text",{x:nx,y:100,fill:"var(--accent)","font-size":"11","font-weight":"800","text-anchor":"middle"},svg);yl.textContent="YOU";
+  const yl=el("text",{x:Math.max(28,Math.min(612,nx)),y:100,fill:"var(--accent)","font-size":"13.5","font-weight":"800","text-anchor":"middle"},svg);yl.textContent="YOU";
   let best=SPEC[2],bd=9;SPEC.forEach(s=>{const d=Math.abs(s.p-st.meanLean);if(d<bd){bd=d;best=s;}});
   const dirw=st.meanLean<-.05?Math.abs(st.meanLean).toFixed(2)+" to the left":st.meanLean>.05?st.meanLean.toFixed(2)+" to the right":"dead centre";
   const gap=Math.abs(st.meanLean)>.45?"a long way from where most people sit":Math.abs(st.meanLean)>.2?"a clear step from the middle":"right about where most people sit";
@@ -993,12 +997,12 @@ async function extractImages(files,onProg){
   return canvases.slice(0,8).map(cv=>cv.toDataURL("image/jpeg",0.82).split(",")[1]);
 }
 function novaToPosts(d){return d.posts.map(p=>{const h=(p.author||"").trim();const q=P(h,h,String(p.text||"").slice(0,160),c1(p.lean),c01(p.heat),normTopic(p.topic),normEmo(p.emo));q.bot=c01(p.bot);return q;});}
-function novaReport(d){return {engine:"Nova (remote)",highlight:d.highlight||"",reinforcing:d.reinforcing||"",makesYou:d.makesYou||{},howInfluencing:d.howInfluencing||"",blindSpots:d.blindSpots||[],accounts:d.accounts||[],suggestions:d.suggestions||[],aiSlopPct:(typeof d.aiSlopPct==="number")?Math.round(d.aiSlopPct):null};}
+function novaReport(d){return {engine:"AI · Amazon Nova (LLM)",highlight:d.highlight||"",reinforcing:d.reinforcing||"",makesYou:d.makesYou||{},howInfluencing:d.howInfluencing||"",blindSpots:d.blindSpots||[],accounts:d.accounts||[],suggestions:d.suggestions||[],aiSlopPct:(typeof d.aiSlopPct==="number")?Math.round(d.aiSlopPct):null};}
 function localReport(posts){
   const sh=shares(posts,TOPICS,"topic"),sorted=TOPICS.map(k=>({k,v:sh[k]})).sort((a,b)=>b.v-a.v),top=sorted[0]||{k:"—",v:0};
   const blind=sorted.filter(o=>o.v<0.04).slice(0,3).map(o=>"barely any "+o.k.toLowerCase());
   const avgBot=posts.reduce((s,p)=>s+(p.bot||0),0)/(posts.length||1);
-  return {engine:"on-device (rough)",
+  return {engine:"Quick · on-device pattern-match",
     highlight:"Mostly "+top.k+" — "+Math.round(top.v*100)+"% of what you saw.",
     reinforcing:"Your feed is dominated by <b>"+top.k+"</b> — "+Math.round(top.v*100)+"% of what you saw. The algorithm keeps serving you the same lane.",
     makesYou:{be:"someone defined by "+top.k.toLowerCase(),feel:"switch to Sharper (Nova) to read the emotional pull",buy:"whatever "+top.k.toLowerCase()+" is selling"},
@@ -1019,6 +1023,8 @@ function renderReport(rep){
   if(rep.howInfluencing)h+='<div class="how"><b>How it works on you:</b> '+rep.howInfluencing+'</div>';
   if(rep.blindSpots&&rep.blindSpots.length)h+='<div class="how"><b>What it hides from you:</b><div class="blind">'+rep.blindSpots.map(b=>'<div class="bi">🚫 '+b+'</div>').join('')+'</div></div>';
   if(rep.aiSlopPct!=null)h+='<div class="slop">🤖 est. bot / low-effort content <div class="bar"><i style="width:'+rep.aiSlopPct+'%"></i></div> ~'+rep.aiSlopPct+'% <span style="color:var(--muted)">(a rough guess)</span></div>';
+  if(rep.engine&&rep.engine.indexOf("device")>=0&&LASTRAW&&!VISUAL.has(PLATFORM))
+    h+='<button class="btn primary" id="sharper-btn" onclick="switchToSharper()" style="width:auto;margin-top:14px">🧠 Read this feed with AI (Nova) →</button>';
   $("#report").innerHTML=h;
 }
 function renderAccounts(accts){
@@ -1039,17 +1045,20 @@ function renderSuggestions(sugs){
   $("#suggestions").innerHTML='<div class="sug">'+sugs.slice(0,4).map(s=>'<div class="s"><div class="g">To get '+(s.toGet||"more balance")+'</div><div class="d">→ '+(s.do||"")+'</div></div>').join('')+'</div>';
 }
 function saveHistory(st){try{const h=JSON.parse(localStorage.getItem("ds_history")||"[]");
-  h.push({t:Date.now(),lean:+st.meanLean.toFixed(2),heat:+st.meanHeat.toFixed(2),score:st.score,topic:EXTRA.topic,arch:ARCH.n});
-  while(h.length>40)h.shift();localStorage.setItem("ds_history",JSON.stringify(h));}catch(e){}}
+  h.push({t:Date.now(),plat:PLATFORM,lean:+st.meanLean.toFixed(2),heat:+st.meanHeat.toFixed(2),score:st.score,topic:EXTRA.topic,arch:ARCH.n});
+  while(h.length>60)h.shift();localStorage.setItem("ds_history",JSON.stringify(h));}catch(e){}}
 function renderHistory(){
   let h=[];try{h=JSON.parse(localStorage.getItem("ds_history")||"[]");}catch(e){}
+  h=h.filter(e=>!e.plat||e.plat===PLATFORM);        // this platform's runs only
   const card=$("#history-card");
   if(h.length<2){card.style.display="none";return;}
   card.style.display="";
+  const pn=(PLAT_INFO[PLATFORM]&&PLAT_INFO[PLATFORM].name)||"this";
+  const tt=card.querySelector(".t"); if(tt)tt.textContent="How your "+pn+" feed has shifted across your visits";
   const fmt=t=>{try{return new Date(t).toLocaleDateString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});}catch(e){return"";}};
   const sc=e=>e.score>=70?"var(--good)":e.score>=50?"var(--warn)":e.score>=32?"var(--serious)":"var(--crit)";
   $("#history").innerHTML='<div class="hist">'+h.slice(-8).reverse().map(e=>'<div class="row"><span class="d">'+fmt(e.t)+'</span><span>'+(e.arch||"")+' · '+(e.topic||"")+'</span><span style="color:'+sc(e)+';font-weight:800">'+e.score+'</span></div>').join('')+
-    '</div><div class="how" style="border:none;padding-top:8px">Come back after a few days of scrolling to see whether your feed\'s balance and heat are trending up or down.</div>';
+    '</div><div class="how" style="border:none;padding-top:8px">Your <b>'+pn+'</b> feed across visits. Come back after a few days\' scrolling to see if its balance and heat are trending up or down.</div>';
 }
 async function pingAgg(score){
   try{
@@ -1062,27 +1071,43 @@ async function pingAgg(score){
     }
   }catch(e){}
 }
-let LASTPOSTS=[],LASTSTATS={},LASTTITLE="";
+let LASTPOSTS=[],LASTSTATS={},LASTTITLE="",LASTRAW="";
+async function switchToSharper(){
+  if(!LASTRAW){toast("Re-capture your feed to use Sharper");return;}
+  const btn=$("#sharper-btn"); if(btn){btn.textContent="🧠 reading with Nova…";btn.disabled=true;}
+  const nova=await novaAnalyse(LASTRAW);
+  if(!nova){if(btn){btn.textContent="🧠 Read this feed with AI (Nova) →";btn.disabled=false;}toast("Couldn't reach the reader — try again.");return;}
+  SCOREDBY="Nova (remote)";
+  analyse(novaToPosts(nova),"Your feed",novaReport(nova),true);
+  toast("Now read by Nova 🧠");
+}
+window.switchToSharper=switchToSharper;
 function exportData(){
   if(!LASTPOSTS.length){toast("Analyse a feed first");return;}
-  const d={source:LASTTITLE,scoredBy:SCOREDBY,count:LASTPOSTS.length,
+  const R=REPORT||{};
+  const d={
+    tool:"doomscroll.stats", platform:PLATFORM, scoredBy:SCOREDBY, engine:R.engine||null,
+    count:LASTPOSTS.length,
     stats:{meanLean:+(LASTSTATS.meanLean||0).toFixed(3),meanHeat:+(LASTSTATS.meanHeat||0).toFixed(3),spread:+(LASTSTATS.spread||0).toFixed(3),balanceScore:LASTSTATS.score},
-    archetype:ARCH.n,character:EXTRA.char,topFed:EXTRA.topic,
-    topicShares:shares(LASTPOSTS,TOPICS,"topic"),toneShares:shares(LASTPOSTS,EMOS,"emo"),
-    posts:LASTPOSTS.map(p=>({text:p.text,lean:+(+p.lean).toFixed(2),heat:+(+p.heat).toFixed(2),topic:p.topic,emo:p.emo}))};
+    archetype:ARCH.n, character:EXTRA.char,
+    report:{highlight:R.highlight||"",reinforcing:R.reinforcing||"",makesYou:R.makesYou||{},howInfluencing:R.howInfluencing||"",blindSpots:R.blindSpots||[],accounts:R.accounts||[],suggestions:R.suggestions||[],aiSlopPct:(R.aiSlopPct!=null?R.aiSlopPct:null)},
+    topicShares:shares(LASTPOSTS,TOPICS,"topic"), toneShares:shares(LASTPOSTS,EMOS,"emo"),
+    posts:LASTPOSTS.map(p=>({author:p.name||p.handle||"",text:p.text,lean:+(+p.lean).toFixed(2),heat:+(+p.heat).toFixed(2),topic:p.topic,emo:p.emo,bot:(p.bot!=null?+(+p.bot).toFixed(2):null)})),
+    rawTextRead:(LASTRAW||"").slice(0,20000)
+  };
   const json=JSON.stringify(d,null,2);
   const a=document.createElement("a");a.download="doomscroll-data.json";a.href="data:application/json;charset=utf-8,"+encodeURIComponent(json);a.click();
-  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(json).then(()=>toast("Data copied + downloaded — paste it here to debug 🐞")).catch(()=>toast("Downloaded doomscroll-data.json"));
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(json).then(()=>toast("Full feed data copied + downloaded 📦")).catch(()=>toast("Downloaded doomscroll-data.json"));
   else toast("Downloaded doomscroll-data.json");
 }
 window.exportData=exportData;
-function analyse(posts,title,report){LASTPOSTS=posts;LASTTITLE=title||"";const st=stats(posts);LASTSTATS=st;
+function analyse(posts,title,report,skipSave){LASTPOSTS=posts;LASTTITLE=title||"";const st=stats(posts);LASTSTATS=st;
   renderArch(posts,st);renderSpectrum(st);renderFed(posts);renderVerdict(st);renderCompass(posts,st);renderLeanBar(posts);
   renderRadar("#radar-topic",TOPICS,shares(posts,TOPICS,"topic"),BASE_TOPIC,.5);
   renderRadar("#radar-tone",EMOS,shares(posts,EMOS,"emo"),BASE_TONE,.45);
   REPORT=report||localReport(posts);
   renderReport(REPORT);renderAccounts(REPORT.accounts);renderSuggestions(REPORT.suggestions);
-  saveHistory(st);renderHistory();pingAgg(st.score);
+  if(!skipSave){saveHistory(st);pingAgg(st.score);}renderHistory();
   const vis=VISUAL.has(PLATFORM);  // hide the political (X-only) cards on visual platforms
   ["#compass","#spectrum","#leanbar"].forEach(sel=>{const e2=$(sel),c=e2&&e2.closest(".card");if(c)c.style.display=vis?"none":"";});
 }
@@ -1161,6 +1186,7 @@ $("#modal").addEventListener("click",e=>{if(e.target===$("#modal"))closeShare();
 analyse(PERSONAS.doom.posts,PERSONAS.doom.title);
 })();
 </script>
+
 
 </body>
 </html>
