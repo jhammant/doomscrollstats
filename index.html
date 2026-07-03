@@ -678,10 +678,11 @@ async function handleFiles(files){
   try{
     let posts=null,report=null;
     if(VISUAL.has(PLATFORM)){                       // Instagram / TikTok — vision
-      setProc("preparing your screenshots…",6);
-      const imgs=await extractImages(files,(i,n)=>setProc("preparing "+i+" / "+n+"…",6+Math.round(i/Math.max(n,1)*40)));
-      if(!imgs.length){setProc("No images found.",100);setTimeout(()=>{endProc();toast("Drop screenshots (or a recording) of your feed.");},1400);return;}
-      setProc("reading "+imgs.length+" images with Nova Pro vision — up to ~20s…",50);
+      const isVid=files.some(f=>/^video\//.test(f.type)), noun=isVid?"frames":"images";
+      setProc(isVid?"grabbing frames from your recording…":"preparing your screenshots…",6);
+      const imgs=await extractImages(files,(i,n)=>setProc((isVid?"grabbing frame ":"preparing ")+i+" / "+n+"…",6+Math.round(i/Math.max(n,1)*40)));
+      if(!imgs.length){setProc("No "+noun+" found.",100);setTimeout(()=>{endProc();toast("Drop screenshots (or a recording) of your feed.");},1400);return;}
+      setProc("reading "+imgs.length+" "+noun+" with Nova Pro vision — up to ~20s…",50);
       const stop=fauxProgress(52,93);               // keep the bar moving while Nova works
       const nova=await novaAnalyseImages(imgs);
       stop();
@@ -1186,6 +1187,7 @@ $("#modal").addEventListener("click",e=>{if(e.target===$("#modal"))closeShare();
 analyse(PERSONAS.doom.posts,PERSONAS.doom.title);
 })();
 </script>
+
 
 
 </body>
