@@ -1,0 +1,6 @@
+.DS_Store
+*.zip
+_*.js
+_*.mjs
+_*.json
+node_modules/

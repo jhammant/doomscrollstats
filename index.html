@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>doomscroll.stats — see the algorithm that's feeding you</title>
+<script>
+/* Analytics — privacy-first, OFF until you set an ID below.
+   GA4: set GA_ID to your "G-XXXXXXXXXX". (Or ask to wire cookieless Cloudflare Web Analytics / Plausible instead — better fit for this brand.) */
+var GA_ID = "";
+(function(){ if(!GA_ID || GA_ID.indexOf("G-")!==0) return;
+  var s=document.createElement("script"); s.async=1; s.src="https://www.googletagmanager.com/gtag/js?id="+GA_ID; document.head.appendChild(s);
+  window.dataLayer=window.dataLayer||[]; window.gtag=function(){dataLayer.push(arguments);}; gtag("js",new Date()); gtag("config",GA_ID,{anonymize_ip:true});
+})();
+</script>
+<style>
+  :root{
+    --plane:#0c0e11; --surface:#15181c; --surface-2:#1b1f24; --raised:#232830;
+    --ink:#f3f5f7; --ink-2:#a6abb4; --muted:#697079;
+    --hair:rgba(255,255,255,0.08); --hair-2:rgba(255,255,255,0.15);
+    --accent:#37d6c4; --accent-2:#1f8378; --accent-ink:#04110f;
+    --l2:#1c5cab; --l1:#3987e5; --c0:#8a8f97; --r1:#e66767; --r2:#b33636;
+    --good:#28c76f; --warn:#fab219; --serious:#ec835a; --crit:#e0484a;
+    --grid:#2a2f36; --baseline:#3a4048;
+    --serif:"Georgia","Times New Roman",serif;
+    --ui:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    --mono:"SF Mono",ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:
+    radial-gradient(120% 80% at 50% -10%,#12161b 0%,var(--plane) 55%);
+    color:var(--ink);font-family:var(--ui);-webkit-font-smoothing:antialiased;line-height:1.5;min-height:100vh;}
+  a{color:var(--accent);}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 20px;}
+
+  /* header */
+  header.top{border-bottom:1px solid var(--hair);position:sticky;top:0;z-index:40;
+    background:rgba(12,14,17,.82);backdrop-filter:blur(9px);}
+  .top-in{max-width:1180px;margin:0 auto;padding:13px 20px;display:flex;align-items:center;gap:14px;}
+  .mark{font-weight:800;font-size:18px;letter-spacing:-0.02em;display:flex;align-items:center;gap:8px;cursor:pointer;}
+  .mark .spin{font-size:19px;animation:sp 9s linear infinite;display:inline-block;}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  @media(prefers-reduced-motion:reduce){.mark .spin{animation:none}}
+  .mark b{color:var(--accent);}.mark .tld{color:var(--muted);font-weight:700;}
+  .top .right{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:13px;color:var(--ink-2);}
+  .who{display:none;align-items:center;gap:8px;}
+  .who .av{width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;}
+  .lnk{background:none;border:none;color:var(--ink-2);font:inherit;cursor:pointer;font-size:13px;}
+  .lnk:hover{color:var(--ink);}
+
+  /* stepper */
+  .stepper{display:none;gap:8px;justify-content:center;padding:20px 0 4px;}
+  .stepper .st{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);font-weight:600;}
+  .stepper .st .n{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--hair-2);display:flex;
+    align-items:center;justify-content:center;font-size:12px;}
+  .stepper .st.on{color:var(--accent);}.stepper .st.on .n{border-color:var(--accent);background:rgba(55,214,196,.12);}
+  .stepper .st.done{color:var(--ink-2);}.stepper .st.done .n{border-color:var(--accent-2);color:var(--accent);}
+  .stepper .sep{width:26px;height:1.5px;background:var(--hair);align-self:center;}
+
+  .view{display:none;animation:fade .35s ease;}
+  .view.on{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* ---------- login ---------- */
+  .hero{max-width:560px;margin:0 auto;padding:56px 0 40px;text-align:center;}
+  .hero .eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:700;}
+  .hero h1{font-family:var(--serif);font-weight:400;font-size:40px;line-height:1.12;margin:14px 0 12px;
+    letter-spacing:-0.015em;text-wrap:balance;}
+  .hero h1 em{font-style:italic;color:var(--accent);}
+  .hero p{color:var(--ink-2);font-size:16px;margin:0 auto 26px;max-width:460px;}
+  .card{background:var(--surface);border:1px solid var(--hair);border-radius:16px;}
+  .login-card{max-width:400px;margin:0 auto;padding:26px 24px;text-align:left;}
+  .btn{font-family:var(--ui);font-weight:700;font-size:14.5px;border:none;border-radius:11px;cursor:pointer;
+    padding:13px 16px;width:100%;display:flex;align-items:center;justify-content:center;gap:9px;transition:filter .15s,transform .05s;}
+  .btn:active{transform:translateY(1px);}
+  .btn.x{background:#000;color:#fff;border:1px solid #2b2b2b;}
+  .btn.x:hover{border-color:#444;}
+  .btn.primary{background:var(--accent);color:var(--accent-ink);}
+  .btn.primary:hover{filter:brightness(1.07);}
+  .btn.ghost{background:transparent;color:var(--ink-2);border:1px solid var(--hair-2);}
+  .btn.ghost:hover{color:var(--ink);}
+  .or{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12px;margin:16px 0;}
+  .or::before,.or::after{content:"";flex:1;height:1px;background:var(--hair);}
+  .fine{font-size:11.5px;color:var(--muted);text-align:center;margin-top:16px;line-height:1.5;}
+  .trust{display:flex;gap:20px;justify-content:center;margin-top:30px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2);}
+  .trust span{display:flex;align-items:center;gap:6px;}
+  .trust b{color:var(--accent);}
+
+  /* ---------- record ---------- */
+  .page-h{text-align:center;max-width:600px;margin:8px auto 26px;}
+  .page-h h2{font-family:var(--serif);font-weight:400;font-size:28px;margin:0 0 8px;letter-spacing:-0.01em;}
+  .page-h p{color:var(--ink-2);margin:0;font-size:15px;}
+  .platforms{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin:0 auto 26px;max-width:640px;}
+  .plat{border:1px solid var(--hair);background:var(--surface);border-radius:12px;padding:11px 15px;
+    display:flex;align-items:center;gap:9px;font-weight:700;font-size:13.5px;cursor:pointer;color:var(--ink-2);position:relative;}
+  .plat[aria-pressed="true"]{border-color:var(--accent);color:var(--ink);background:rgba(55,214,196,.07);}
+  .plat.soon{opacity:.5;cursor:not-allowed;}
+  .plat .soon-tag{font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+    border:1px solid var(--hair-2);border-radius:999px;padding:1px 6px;font-weight:700;}
+  .plat .ic{font-size:15px;}
+  .rec-grid{display:grid;grid-template-columns:230px 1fr;gap:0;max-width:760px;margin:0 auto;
+    background:var(--surface);border:1px solid var(--hair);border-radius:16px;overflow:hidden;}
+  @media(max-width:640px){.rec-grid{grid-template-columns:1fr;}}
+  .dev-tabs{border-right:1px solid var(--hair);padding:8px;display:flex;flex-direction:column;gap:4px;}
+  @media(max-width:640px){.dev-tabs{flex-direction:row;border-right:none;border-bottom:1px solid var(--hair);overflow-x:auto;}}
+  .dev-tab{text-align:left;background:none;border:none;color:var(--ink-2);font:inherit;font-weight:600;font-size:13.5px;
+    padding:11px 13px;border-radius:9px;cursor:pointer;display:flex;align-items:center;gap:9px;white-space:nowrap;}
+  .dev-tab[aria-pressed="true"]{background:var(--surface-2);color:var(--ink);}
+  .steps{padding:22px 24px;}
+  .steps ol{margin:0;padding:0;list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:16px;}
+  .steps li{counter-increment:s;padding-left:40px;position:relative;font-size:14.5px;line-height:1.5;}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:-1px;width:26px;height:26px;border-radius:50%;
+    background:rgba(55,214,196,.12);border:1px solid var(--accent-2);color:var(--accent);font-weight:800;font-size:13px;
+    display:flex;align-items:center;justify-content:center;}
+  .steps li b{color:var(--ink);}
+  .steps .tip{margin-top:20px;background:var(--surface-2);border:1px solid var(--hair);border-radius:11px;
+    padding:12px 14px;font-size:13px;color:var(--ink-2);display:flex;gap:10px;}
+  .steps .tip b{color:var(--accent);}
+  .nav-row{display:flex;gap:12px;justify-content:center;margin:26px auto 0;max-width:760px;}
+  .nav-row .btn{width:auto;padding:12px 22px;}
+
+  /* ---------- upload ---------- */
+  .drop{max-width:600px;margin:0 auto;border:2px dashed var(--hair-2);border-radius:18px;background:var(--surface);
+    padding:44px 24px;text-align:center;transition:border-color .15s,background .15s;cursor:pointer;}
+  .drop.hot{border-color:var(--accent);background:rgba(55,214,196,.05);}
+  .drop .ic{font-size:40px;}
+  .drop h3{font-size:19px;margin:12px 0 6px;font-weight:800;}
+  .drop p{color:var(--ink-2);font-size:14px;margin:0;}
+  .drop .priv{margin-top:14px;font-size:12.5px;color:var(--accent);display:inline-flex;gap:6px;align-items:center;}
+  .proc{max-width:600px;margin:0 auto;text-align:center;padding:40px 0;display:none;}
+  .proc.on{display:block;}
+  .proc .bar{height:8px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin:18px auto;max-width:340px;}
+  .proc .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent-2),var(--accent));
+    border-radius:99px;transition:width .3s;}
+  .proc .log{font-family:var(--mono);font-size:12.5px;color:var(--muted);min-height:20px;}
+  .alt{max-width:600px;margin:26px auto 0;text-align:center;}
+  .alt .lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:12px;}
+  .chips{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;}
+  .chip{font-weight:600;font-size:13px;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--hair);
+    padding:8px 13px;border-radius:999px;cursor:pointer;display:inline-flex;gap:7px;align-items:center;transition:all .15s;}
+  .chip:hover{color:var(--ink);border-color:var(--hair-2);}
+  .chip .sw{width:9px;height:9px;border-radius:50%;}
+  .paste{max-width:600px;margin:16px auto 0;}
+  .paste textarea{width:100%;min-height:96px;background:var(--surface);color:var(--ink);border:1px solid var(--hair-2);
+    border-radius:12px;padding:12px;font-family:var(--mono);font-size:12.5px;line-height:1.5;resize:vertical;}
+  .paste textarea:focus{outline:2px solid var(--accent);border-color:transparent;}
+  .paste .row{display:flex;gap:10px;margin-top:9px;justify-content:center;}
+  .paste .btn{width:auto;padding:9px 16px;}
+
+  /* ---------- dashboard ---------- */
+  .dash{display:flex;flex-direction:column;gap:18px;max-width:960px;margin:0 auto;}
+  .card-h{padding:13px 16px 9px;border-bottom:1px solid var(--hair);}
+  .card-h .k{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;}
+  .card-h .t{font-size:14.5px;font-weight:700;margin-top:3px;}
+  .card-h .t .sub{font-weight:400;color:var(--ink-2);font-size:12.5px;}
+  .card-b{padding:15px;}
+  svg{display:block;width:100%;height:auto;overflow:visible;}
+  text{font-family:var(--ui);}
+  /* archetype */
+  .arch{border:1px solid var(--hair-2);border-radius:16px;overflow:hidden;position:relative;
+    background:radial-gradient(130% 150% at 8% 0%,var(--vibe,rgba(55,214,196,.16)),var(--surface) 62%);}
+  .arch-in{display:grid;grid-template-columns:auto 1fr auto;gap:18px;padding:20px;align-items:center;}
+  @media(max-width:620px){.arch-in{grid-template-columns:1fr;text-align:center;}}
+  .arch-emoji{width:76px;height:76px;border-radius:19px;display:flex;align-items:center;justify-content:center;
+    font-size:44px;background:rgba(0,0,0,.3);border:1.5px solid var(--vibe-solid,var(--hair-2));}
+  @media(max-width:620px){.arch-emoji{margin:0 auto;}}
+  .arch-k{font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-2);font-weight:700;}
+  .arch-name{font-size:27px;font-weight:800;letter-spacing:-0.02em;line-height:1.05;margin:5px 0;}
+  .arch-tag{font-family:var(--serif);font-style:italic;font-size:14.5px;color:var(--ink-2);line-height:1.4;}
+  .arch-pct{font-size:12px;font-weight:700;padding:4px 11px;border-radius:999px;background:rgba(0,0,0,.32);
+    border:1px solid var(--hair-2);display:inline-block;margin-top:9px;}
+  .share-btn{white-space:nowrap;}
+  @media(max-width:620px){.share-btn{margin:0 auto;}}
+  .radars{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media(max-width:680px){.radars{grid-template-columns:1fr;}}
+  .verdict{display:grid;grid-template-columns:150px 1fr;}
+  @media(max-width:560px){.verdict{grid-template-columns:1fr;}}
+  .score-box{padding:18px;border-right:1px solid var(--hair);text-align:center;}
+  @media(max-width:560px){.score-box{border-right:none;border-bottom:1px solid var(--hair);}}
+  .score-num{font-size:46px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;}
+  .score-lbl{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-top:5px;}
+  .verdict-body{padding:17px;display:flex;flex-direction:column;gap:11px;justify-content:center;}
+  .verdict-head{font-family:var(--serif);font-size:18px;line-height:1.3;}
+  .vrow{display:flex;gap:16px;flex-wrap:wrap;}
+  .vstat .vv{font-size:14.5px;font-weight:700;}
+  .vstat .vk{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:600;}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;padding:10px 15px 2px;font-size:11.5px;color:var(--ink-2);}
+  .legend .li{display:flex;align-items:center;gap:6px;}.legend .mk{width:11px;height:11px;border-radius:50%;}
+  .legend .mk.ring{background:transparent;border:2px solid var(--accent);}
+  .legend .mk.sq{border-radius:2px;}
+
+  /* spectrum + being-fed */
+  .spec-label{text-align:center;margin-top:8px;}
+  .spec-label .big{font-size:22px;font-weight:800;letter-spacing:-0.01em;}
+  .spec-label .sub{font-size:13px;color:var(--ink-2);margin-top:3px;}
+  .spec-label .sub b{color:var(--ink);}
+  .fed-head{font-family:var(--serif);font-size:18px;line-height:1.4;margin:0 0 14px;text-wrap:balance;}
+  .fed-row{display:flex;flex-direction:column;gap:11px;}
+  .fed-item{display:grid;grid-template-columns:30px 1fr 46px;gap:11px;align-items:center;}
+  .fed-item .em{font-size:20px;text-align:center;}
+  .fed-item .nm{font-size:12.5px;font-weight:600;color:var(--ink-2);margin-bottom:5px;}
+  .fed-item.top .nm{color:var(--ink);font-weight:800;}
+  .fed-item .track{height:11px;background:var(--surface-2);border-radius:99px;overflow:hidden;}
+  .fed-item .track i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent-2),var(--accent));}
+  .fed-item .pct{font-variant-numeric:tabular-nums;font-weight:800;font-size:14px;text-align:right;}
+  .party-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:13px;flex-wrap:wrap;border-top:1px solid var(--hair);padding-top:13px;}
+  .party{font-size:13.5px;color:var(--ink-2);}.party b{color:var(--ink);}
+  #country{background:var(--surface-2);color:var(--ink);border:1px solid var(--hair-2);border-radius:8px;padding:5px 8px;font:inherit;font-size:12.5px;cursor:pointer;}
+
+  /* the read / accounts / suggestions / history / engine toggle */
+  .read-highlight{font-family:var(--serif);font-style:italic;font-size:23px;line-height:1.35;color:var(--accent);margin:0 0 14px;text-wrap:balance;}
+  .read-hero{font-size:15px;line-height:1.5;margin:0 0 12px;color:var(--ink-2);text-wrap:pretty;}
+  .acct-note{font-size:12px;color:var(--muted);margin-top:12px;line-height:1.5;border-top:1px solid var(--hair);padding-top:10px;}
+  .bfb{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0;}
+  @media(max-width:560px){.bfb{grid-template-columns:1fr;}}
+  .bfb .cell{background:var(--surface-2);border:1px solid var(--hair);border-radius:11px;padding:11px 12px;}
+  .bfb .k{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700;}
+  .bfb .v{font-size:13.5px;margin-top:4px;color:var(--ink);line-height:1.4;}
+  .how{font-size:13.5px;color:var(--ink-2);line-height:1.5;margin-top:10px;border-top:1px solid var(--hair);padding-top:10px;}
+  .how b{color:var(--ink);}
+  .blind{display:flex;flex-direction:column;gap:6px;margin-top:7px;}
+  .blind .bi{font-size:13.5px;color:var(--ink-2);}
+  .slop{margin-top:12px;display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--ink-2);}
+  .slop .bar{flex:1;max-width:180px;height:9px;background:var(--surface-2);border-radius:99px;overflow:hidden;}
+  .slop .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--warn),var(--crit));border-radius:99px;}
+  .acct{display:grid;grid-template-columns:1fr auto auto;gap:3px 12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--hair);}
+  .acct:last-child{border-bottom:none;}
+  .acct .h{font-weight:700;font-size:13.5px;}
+  .acct .n{font-size:12px;color:var(--ink-2);grid-column:1;}
+  .acct .lean{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;justify-self:end;}
+  .acct .share{font-size:11px;color:var(--muted);justify-self:end;font-variant-numeric:tabular-nums;}
+  .sug{display:flex;flex-direction:column;gap:10px;}
+  .sug .s{background:var(--surface-2);border:1px solid var(--hair);border-radius:11px;padding:11px 12px;}
+  .sug .s .g{font-size:12px;color:var(--muted);}
+  .sug .s .d{font-size:13.5px;color:var(--ink);margin-top:3px;font-weight:600;}
+  .hist{display:flex;flex-direction:column;gap:8px;}
+  .hist .row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;font-size:12.5px;}
+  .hist .row .d{color:var(--muted);font-variant-numeric:tabular-nums;}
+  .engine-row{display:flex;gap:9px;justify-content:center;margin:16px auto 0;flex-wrap:wrap;align-items:center;}
+  .engine-row .lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;}
+  .eng{border:1px solid var(--hair);background:var(--surface);border-radius:999px;padding:8px 14px;font-weight:700;font-size:13px;cursor:pointer;color:var(--ink-2);display:inline-flex;gap:7px;align-items:center;}
+  .eng[aria-pressed="true"]{border-color:var(--accent);color:var(--ink);background:rgba(55,214,196,.08);}
+  .eng .sub2{font-weight:400;color:var(--muted);font-size:11px;}
+
+  /* about */
+  .ab-p{color:var(--ink-2);font-size:15.5px;line-height:1.6;margin:0 0 14px;}
+  .ab-p b{color:var(--ink);} .ab-p em{color:var(--accent);font-style:italic;}
+  .ab-links{display:flex;flex-direction:column;gap:10px;margin-top:24px;}
+  .ab-link{display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--hair-2);border-radius:12px;padding:14px 16px;text-decoration:none;color:var(--ink);font-weight:700;font-size:15px;transition:border-color .15s;}
+  .ab-link:hover{border-color:var(--accent);}
+  .ab-link span{color:var(--muted);font-weight:400;font-size:13px;}
+
+  /* share modal */
+  .modal{position:fixed;inset:0;background:rgba(4,6,9,.72);z-index:100;display:none;align-items:center;
+    justify-content:center;padding:20px;backdrop-filter:blur(3px);}
+  .modal.on{display:flex;}
+  .modal-card{background:var(--surface);border:1px solid var(--hair-2);border-radius:18px;max-width:400px;width:100%;
+    padding:20px;text-align:center;}
+  .modal-card h3{margin:0 0 4px;font-size:18px;}
+  .modal-card .sub{color:var(--ink-2);font-size:13px;margin:0 0 16px;}
+  #sharecanvas{width:100%;border-radius:12px;border:1px solid var(--hair);display:block;}
+  .modal-actions{display:flex;gap:9px;margin-top:16px;}
+  .modal-actions .btn{padding:11px 14px;font-size:13.5px;}
+  .close-x{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;}
+
+  footer{max-width:1180px;margin:56px auto 0;padding:22px 20px 60px;border-top:1px solid var(--hair);
+    color:var(--muted);font-size:12.5px;line-height:1.6;}
+  footer b{color:var(--ink-2);}
+
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(16px);background:var(--ink);
+    color:#0b0b0b;font-weight:700;font-size:13px;padding:10px 17px;border-radius:999px;opacity:0;pointer-events:none;
+    transition:opacity .25s,transform .25s;z-index:120;box-shadow:0 10px 30px rgba(0,0,0,.5);}
+  #toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+  #tt{position:fixed;z-index:110;pointer-events:none;opacity:0;transition:opacity .12s;background:#05070a;
+    border:1px solid var(--hair-2);border-radius:9px;padding:7px 10px;font-size:12px;max-width:220px;box-shadow:0 8px 26px rgba(0,0,0,.5);}
+  #tt .tt-t{font-weight:700;margin-bottom:2px;}#tt .tt-r{color:var(--ink-2);}
+  .you-center{transition:cx .5s cubic-bezier(.2,.7,.2,1),cy .5s cubic-bezier(.2,.7,.2,1);}
+  @media(prefers-reduced-motion:reduce){.you-center{transition:none;}}
+</style>
+
+<header class="top">
+  <div class="top-in">
+    <div class="mark" onclick="go('login')"><span class="spin">🌀</span>doom<b>scroll</b><span class="tld">.stats</span></div>
+    <div class="right">
+      <button class="lnk" onclick="go('about')">About</button>
+      <a class="lnk" href="https://www.buymeacoffee.com/jhammant" target="_blank" rel="noopener" style="text-decoration:none" title="Buy me a coffee">☕</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="stepper" id="stepper">
+    <div class="st" data-step="record"><span class="n">1</span>Record</div><div class="sep"></div>
+    <div class="st" data-step="upload"><span class="n">2</span>Analyse</div><div class="sep"></div>
+    <div class="st" data-step="dash"><span class="n">3</span>Your doomscroll</div>
+  </div>
+
+  <!-- ============ LOGIN ============ -->
+  <section class="view on" id="view-login">
+    <div class="hero">
+      <div class="eyebrow">You can't see it from the inside</div>
+      <h1>See the algorithm that's <em>feeding you</em>.</h1>
+      <p>Record 30 seconds of your feed. We read it on your device, map it against real news outlets,
+        and show you the shape of what you're being served — and how far it's drifted from the middle.</p>
+      <div style="max-width:360px;margin:0 auto;">
+        <button class="btn primary" onclick="go('record')">See what's feeding you →</button>
+        <div class="fine">No sign-up, no account, ever. Your feed is read on your device — nothing is uploaded.</div>
+      </div>
+      <div class="trust">
+        <span>🔒 <b>Private</b> — nothing about you is stored</span>
+        <span>🆓 <b>Free</b> forever</span>
+        <span>⚖️ <b>Non-partisan</b> by design</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RECORD ============ -->
+  <section class="view" id="view-record">
+    <div class="page-h">
+      <h2>Capture your feed</h2>
+      <p>Two easy ways: <b>screenshot</b> your <b>For You</b> feed a bunch of times, or <b>screen-record</b> it for ~30 seconds.</p>
+    </div>
+    <div class="platforms">
+      <button class="plat" data-plat="x" aria-pressed="true"><span class="ic">𝕏</span>X / Twitter</button>
+      <button class="plat" data-plat="instagram"><span class="ic">📸</span>Instagram</button>
+      <button class="plat" data-plat="tiktok"><span class="ic">🎵</span>TikTok</button>
+      <button class="plat" data-plat="youtube"><span class="ic">▶️</span>YouTube</button>
+      <button class="plat" data-plat="linkedin"><span class="ic">💼</span>LinkedIn</button>
+      <button class="plat" data-plat="reddit"><span class="ic">👽</span>Reddit</button>
+      <button class="plat" data-plat="facebook"><span class="ic">📘</span>Facebook</button>
+    </div>
+    <div class="platforms" id="methods" style="margin-bottom:22px">
+      <button class="plat" data-method="shots" aria-pressed="true"><span class="ic">📸</span>Screenshots <span class="soon-tag" style="border-color:var(--accent-2);color:var(--accent)">easiest</span></button>
+      <button class="plat" data-method="record" aria-pressed="false"><span class="ic">📹</span>Screen record</button>
+    </div>
+    <div class="rec-grid" id="rec-grid">
+      <div class="dev-tabs" id="dev-tabs">
+        <button class="dev-tab" data-dev="ios" aria-pressed="true">📱 iPhone</button>
+        <button class="dev-tab" data-dev="android" aria-pressed="false">🤖 Android</button>
+        <button class="dev-tab" data-dev="desktop" aria-pressed="false">💻 Desktop</button>
+      </div>
+      <div class="steps" id="steps"></div>
+    </div>
+    <div class="nav-row">
+      <button class="btn ghost" onclick="go('login')" style="width:auto">← Back</button>
+      <button class="btn primary" id="rec-next" onclick="go('upload')" style="width:auto">I've got my screenshots →</button>
+    </div>
+  </section>
+
+  <!-- ============ UPLOAD ============ -->
+  <section class="view" id="view-upload">
+    <div class="page-h">
+      <h2>Drop it in</h2>
+      <p id="upload-sub">Nothing about you is stored — ever.</p>
+    </div>
+    <div class="drop" id="drop" onclick="document.getElementById('file').click()">
+      <div class="ic">📸</div>
+      <h3>Drop your screenshots (or a screen recording)</h3>
+      <p>Select them all at once — about 8 screenshots is plenty. Or tap to choose.</p>
+      <span class="priv">🔒 nothing about you is stored</span>
+      <input type="file" id="file" accept="video/*,image/*" multiple hidden>
+    </div>
+    <div class="engine-row">
+      <span class="lbl">Read with</span>
+      <button class="eng" data-eng="local" aria-pressed="true">⚡ On-device <span class="sub2">quick · private, stays on your phone</span></button>
+      <button class="eng" data-eng="remote" aria-pressed="false">🧠 Sharper <span class="sub2">Nova · fuller read (sent to server)</span></button>
+    </div>
+    <div class="proc" id="proc">
+      <div class="ic" style="font-size:34px">🧠</div>
+      <div class="bar"><i id="bar"></i></div>
+      <div class="log" id="proclog">reading frames…</div>
+    </div>
+    <div class="alt" id="alt">
+      <div class="lbl">Or see it instantly with a sample feed</div>
+      <div class="chips">
+        <button class="chip" data-p="balanced"><span class="sw" style="background:var(--good)"></span>Balanced</button>
+        <button class="chip" data-p="left"><span class="sw" style="background:var(--l1)"></span>Left bubble</button>
+        <button class="chip" data-p="right"><span class="sw" style="background:var(--r1)"></span>Right bubble</button>
+        <button class="chip" data-p="doom"><span class="sw" style="background:var(--crit)"></span>Outrage spiral</button>
+      </div>
+      <div class="paste">
+        <textarea id="pasteta" placeholder="…or paste a chunk of your timeline — one post per line — and hit Analyse."></textarea>
+        <div class="row"><button class="btn primary" onclick="analysePaste()" style="width:auto">Analyse pasted text</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DASHBOARD ============ -->
+  <section class="view" id="view-dash">
+    <div class="dash">
+      <div class="arch" id="arch">
+        <div class="arch-in">
+          <div class="arch-emoji" id="a-emoji">🌀</div>
+          <div>
+            <div class="arch-k">Your doomscroll is…</div>
+            <div class="arch-name" id="a-name">—</div>
+            <div class="arch-tag" id="a-tag">—</div>
+            <div class="arch-pct" id="a-pct">—</div>
+          </div>
+          <button class="btn primary share-btn" onclick="openShare()" style="width:auto">Share your doomscroll ↗</button>
+        </div>
+      </div>
+
+      <div class="card" id="report-card">
+        <div class="card-h"><div class="k">The read</div><div class="t">What your algorithm is doing to you <span class="sub" id="report-engine"></span></div></div>
+        <div class="card-b" id="report"></div>
+      </div>
+      <div class="card" id="accounts-card" style="display:none">
+        <div class="card-h"><div class="k">Who shapes your feed</div><div class="t">The accounts driving what you see, and their lean</div></div>
+        <div class="card-b" id="accounts"></div>
+      </div>
+      <div class="card" id="sugg-card" style="display:none">
+        <div class="card-h"><div class="k">Break your bubble</div><div class="t">Widen your view <span class="sub">— starting points; verify before you follow</span></div></div>
+        <div class="card-b" id="suggestions"></div>
+      </div>
+      <div class="card" id="agg-card" style="display:none">
+        <div class="card-h"><div class="k">Compared to everyone</div><div class="t">How bubbled you are vs. all doomscroll.stats users</div></div>
+        <div class="card-b" id="agg"></div>
+      </div>
+      <div class="card" id="history-card" style="display:none">
+        <div class="card-h"><div class="k">Over time</div><div class="t">How your feed has shifted across your visits</div></div>
+        <div class="card-b" id="history"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div class="k">Where you land</div>
+          <div class="t">How left / right your feed leans <span class="sub">— and where most people sit</span></div></div>
+        <div class="card-b"><svg id="spectrum" viewBox="0 0 640 168" role="img" aria-label="political spectrum dial"></svg>
+          <div class="spec-label" id="spec-label"></div>
+          <div class="party-row"><span class="party" id="party"></span>
+            <select id="country" onchange="renderParty()" aria-label="country">
+              <option value="US">🇺🇸 US</option><option value="UK">🇬🇧 UK</option><option value="AU">🇦🇺 AU</option><option value="CA">🇨🇦 CA</option>
+            </select></div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div class="k">What you're being fed</div>
+          <div class="t">The lanes the algorithm keeps serving you</div></div>
+        <div class="card-b" id="fed"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div class="k">Bias compass</div>
+          <div class="t">Where your feed sits <span class="sub">— news outlets are the fixed landmarks</span></div></div>
+        <div><svg id="compass" viewBox="0 0 720 540" role="img" aria-label="bias compass"></svg></div>
+        <div class="legend">
+          <span class="li"><span class="mk" style="background:var(--muted)"></span>News outlet</span>
+          <span class="li"><span class="mk ring"></span>Your feed</span>
+          <span class="li"><span class="mk sq" style="background:var(--accent);opacity:.5"></span>A post</span>
+          <span class="li"><span class="mk sq" style="background:rgba(40,199,111,.25);border:1px solid var(--good)"></span>The middle</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div class="k">Diet breakdown</div><div class="t">How your feed splits across the spectrum</div></div>
+        <div class="card-b" style="padding-top:18px"><svg id="leanbar" viewBox="0 0 720 112" role="img" aria-label="lean distribution"></svg></div>
+      </div>
+
+      <div class="radars">
+        <div class="card"><div class="card-h"><div class="k">Topic concentration</div>
+          <div class="t">What it feeds you <span class="sub">— a spike = fixation</span></div></div>
+          <div class="card-b"><svg id="radar-topic" viewBox="0 0 340 316" role="img" aria-label="topics"></svg></div></div>
+        <div class="card"><div class="card-h"><div class="k">Emotional tone</div>
+          <div class="t">How it makes you feel <span class="sub">— vs a calm diet</span></div></div>
+          <div class="card-b"><svg id="radar-tone" viewBox="0 0 340 316" role="img" aria-label="tone"></svg></div></div>
+      </div>
+
+      <div class="card"><div class="verdict">
+        <div class="score-box"><div class="score-num" id="score">—</div><div class="score-lbl">Balance score</div></div>
+        <div class="verdict-body">
+          <div class="verdict-head" id="verdict-head">—</div>
+          <div class="vrow">
+            <div class="vstat"><span class="vv" id="v-lean">—</span><br><span class="vk">Center of gravity</span></div>
+            <div class="vstat"><span class="vv" id="v-spread">—</span><br><span class="vk">Viewpoint range</span></div>
+            <div class="vstat"><span class="vv" id="v-heat">—</span><br><span class="vk">Emotional heat</span></div>
+          </div>
+        </div>
+      </div></div>
+
+      <div class="nav-row"><button class="btn ghost" onclick="go('upload')" style="width:auto">← Analyse another feed</button>
+        <button class="btn ghost" onclick="exportData()" style="width:auto">⬇ Share my data (for testing)</button></div>
+    </div>
+  </section>
+</div>
+
+<section class="view" id="view-about">
+  <div class="wrap" style="max-width:680px;padding-top:44px;padding-bottom:40px;">
+    <h1 style="font-family:var(--serif);font-weight:400;font-size:30px;margin:0 0 16px;letter-spacing:-.01em;">About doomscroll.stats</h1>
+    <p class="ab-p">Your feed has a shape you can't see from the inside. doomscroll.stats holds up a mirror: it reads the posts an algorithm serves you and shows what it's reinforcing — what it's quietly trying to make you <em>be</em>, <em>feel</em>, and <em>buy</em>.</p>
+    <p class="ab-p">It's <b>free</b>, a <b>mirror not an alarm</b>, and <b>non-partisan by design</b> — a hard-left and a hard-right bubble score the same. Your screenshots are read on your device (or, for the sharper read, by a cheap model on the server); <b>nothing about you is stored</b>.</p>
+    <p class="ab-p">Built because algorithms quietly shape what millions of us think, and almost no one gets to watch it happen. Now works on X, Instagram, TikTok and YouTube.</p>
+    <div class="ab-links">
+      <a class="ab-link" href="https://www.buymeacoffee.com/jhammant" target="_blank" rel="noopener">☕ Buy me a coffee <span>— helps keep it free to run</span></a>
+      <a class="ab-link" href="https://github.com/jhammant" target="_blank" rel="noopener">💻 GitHub <span>— it's open source</span></a>
+      <a class="ab-link" href="https://hammant.io" target="_blank" rel="noopener">🌐 hammant.io <span>— more of my work</span></a>
+      <a class="ab-link" href="https://binminder.co.uk" target="_blank" rel="noopener">🗑️ BinMinder <span>— never miss bin day</span></a>
+    </div>
+    <a class="ab-link" href="#" onclick="go('method');return false">📐 How it works <span>— methodology &amp; honest limitations</span></a>
+    <button class="btn ghost" onclick="go('login')" style="width:auto;margin-top:26px;">← Back to the tool</button>
+  </div>
+</section>
+
+<section class="view" id="view-method">
+  <div class="wrap" style="max-width:680px;padding-top:44px;padding-bottom:40px;">
+    <h1 style="font-family:var(--serif);font-weight:400;font-size:30px;margin:0 0 16px;letter-spacing:-.01em;">How this works</h1>
+    <p class="ab-p"><b>1. You capture your feed.</b> Screenshots or a short screen-recording of your For You / home feed. Text feeds (X, YouTube, LinkedIn, Reddit, Facebook) are read <b>on your device</b>; image feeds (Instagram, TikTok) are sent to a model and immediately discarded.</p>
+    <p class="ab-p"><b>2. It reads the posts.</b> On-device: Tesseract.js (OCR) plus a small in-browser model. Sharper reads and image feeds use Amazon Nova (Micro for text, Pro for vision) on a server that stores nothing.</p>
+    <p class="ab-p"><b>3. It scores &amp; summarises.</b> Each post gets a political lean (−1 to +1), emotional heat (0–1), a topic, and a rough "bot / low-effort" estimate. From those it writes the read: what your feed <em>is</em>, what it's trying to make you be/feel/buy, your blind spots, and which accounts shape it.</p>
+    <h2 style="font-size:17px;margin:26px 0 8px;">Non-partisan by design</h2>
+    <p class="ab-p">Extremity is measured <b>symmetrically</b> — a hard-left and a hard-right feed of equal intensity get equal-magnitude scores. The tool takes no side; it measures the <em>shape</em> of your feed, not whether you're right or wrong.</p>
+    <h2 style="font-size:17px;margin:26px 0 8px;">Honest limitations</h2>
+    <p class="ab-p">Classifying short posts and images is inherently uncertain. Account lean is solid for well-known accounts and a <b>rough guess</b> for small ones. The "% bot" figure and news-outlet positions are estimates, not facts. Treat every score as a <b>conversation starter, not a verdict</b>.</p>
+    <h2 style="font-size:17px;margin:26px 0 8px;">Privacy</h2>
+    <p class="ab-p">No account, no tracking cookies. Text feeds never leave your device. Image feeds are read once and discarded — <b>nothing about you is stored</b>. The code is open source.</p>
+    <button class="btn ghost" onclick="go('login')" style="width:auto;margin-top:26px;">← Back to the tool</button>
+  </div>
+</section>
+
+<footer>
+  <b>doomscroll.stats</b> is a free, open tool. Text feeds (X, YouTube) are read <b>on your device</b>; image feeds (Instagram, TikTok) are read by a model on the server and discarded immediately — <b>nothing about you is ever stored</b>.
+  Outlet positions are approximate, from public media-bias ratings, and used only to show <em>relative</em> distance.
+  It measures extremity <b>symmetrically</b> — a hard-left bubble and a hard-right bubble score the same. This is a mirror, not a verdict:
+  political classification of short text is uncertain, so treat every score as a conversation starter. Sample feeds are fictional.
+</footer>
+
+<div class="modal" id="modal">
+  <div class="card modal-card" style="position:relative">
+    <button class="close-x" onclick="closeShare()">×</button>
+    <h3>Your doomscroll card</h3>
+    <p class="sub">Post it and ask a friend: what's yours?</p>
+    <canvas id="sharecanvas" width="600" height="600"></canvas>
+    <div class="modal-actions">
+      <button class="btn primary" onclick="copyCaption()">Copy caption</button>
+      <button class="btn ghost" onclick="downloadCard()">Download image</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="tt"><div class="tt-t"></div><div class="tt-r"></div></div>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<script type="module">
+/* On-device classifier — a zero-shot NLI model runs entirely in the browser (no server, nothing uploaded).
+   Falls back to the heuristic automatically if this fails to load (e.g. sandboxed preview). */
+try{
+  const { pipeline, env } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.2.4/+esm');
+  env.allowLocalModels = false;
+  const TOP = ["Politics","Culture","Economy","World","Local","Sport","Tech","Life"];
+  const HYP = {Politics:"about politics, elections or government",Culture:"about culture, religion, gender or social issues",Economy:"about the economy, money, markets or business",World:"about world news, war or international affairs",Local:"about local community news",Sport:"about sport",Tech:"about technology, AI, software, crypto or science",Life:"about personal life, food, family or hobbies"};
+  const LEANL = ["left-wing or progressive politics","not political, neutral or centrist","right-wing or conservative politics"];
+  const HEATL = ["calm, neutral or factual","angry, outraged or inflammatory"];
+  let zsc = null;
+  window.loadDeep = async (onProg) => { if(!zsc) zsc = await pipeline('zero-shot-classification','Xenova/distilbert-base-uncased-mnli',{dtype:'q8',progress_callback:onProg}); return zsc; };
+  window.deepClassify = async (texts,onStep) => {
+    const c = await window.loadDeep();
+    const topLabels = TOP.map(t=>HYP[t]);
+    const out = [];
+    for(let i=0;i<texts.length;i++){
+      const t = (texts[i]||"").slice(0,300);
+      const tp = await c(t, topLabels);
+      const topic = TOP[topLabels.indexOf(tp.labels[0])] || "Life";
+      const ln = await c(t, LEANL); const ls={}; ln.labels.forEach((l,j)=>ls[l]=ln.scores[j]);
+      const lean = Math.max(-1,Math.min(1,(ls[LEANL[2]]||0)-(ls[LEANL[0]]||0)));
+      const ht = await c(t, HEATL); const hs={}; ht.labels.forEach((l,j)=>hs[l]=ht.scores[j]);
+      const heat = Math.max(0,Math.min(1,hs[HEATL[1]]||0));
+      const emo = heat>0.66?"Outrage":heat>0.45?"Anger":heat>0.3?"Contempt":topic==="Life"?"Hope":"Curiosity";
+      out.push({lean,heat,topic,emo});
+      if(onStep) onStep(i+1,texts.length);
+    }
+    return out;
+  };
+}catch(e){ console.warn("on-device model unavailable, using heuristic:", e); }
+</script>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const NS="http://www.w3.org/2000/svg";
+function el(t,a,p){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e;}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function seed(i){const x=Math.sin(i*127.1+11.7)*43758.5453;return x-Math.floor(x);}
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),2400);}
+
+/* ---------- navigation ---------- */
+const STEPS=["record","upload","dash"];
+function go(v){
+  $$(".view").forEach(x=>x.classList.remove("on"));
+  $("#view-"+v).classList.add("on");
+  const sp=$("#stepper"); sp.style.display = (v==="login"||v==="about"||v==="method")?"none":"flex";
+  const idx=STEPS.indexOf(v);
+  $$("#stepper .st").forEach((st,i)=>{st.classList.toggle("on",i===idx);st.classList.toggle("done",i<idx);});
+  if(v==="upload"){                                  // always reset a clean, correct upload view
+    const d=$("#drop"),a=$("#alt"),pr=$("#proc"),er=document.querySelector(".engine-row"),f=$("#file"),priv=document.querySelector(".drop .priv");
+    if(d)d.style.display="block"; if(a)a.style.display="block"; if(pr)pr.classList.remove("on"); if(f)f.value="";
+    const vis=(typeof VISUAL!=="undefined")&&VISUAL.has(PLATFORM);
+    if(er)er.style.display=vis?"none":"flex";        // no local/remote choice on visual platforms — always Nova vision
+    if(priv)priv.textContent=vis?"🔒 read by Nova, then discarded — never stored":"🔒 on-device by default · nothing is stored";
+    const sub=$("#upload-sub"); if(sub)sub.textContent=vis?"Your "+PLATFORM+" screenshots are read by Nova vision, then discarded.":"Read on your device (or by Nova if you pick Sharper) — nothing about you is stored.";
+  }
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+window.go=go;
+
+/* no login — the tool never authenticates; the landing CTA goes straight to capture */
+
+/* ---------- record instructions ---------- */
+let PLATFORM="x";
+const PLAT_INFO={
+  x:{name:"X",feed:"For You",site:"x.com"},
+  instagram:{name:"Instagram",feed:"Home / Reels",site:"instagram.com"},
+  tiktok:{name:"TikTok",feed:"For You",site:"tiktok.com"},
+  youtube:{name:"YouTube",feed:"Home",site:"youtube.com"},
+  linkedin:{name:"LinkedIn",feed:"home",site:"linkedin.com"},
+  reddit:{name:"Reddit",feed:"Home / Popular",site:"reddit.com"},
+  facebook:{name:"Facebook",feed:"News Feed",site:"facebook.com"}
+};
+const DEV={
+  ios:["Open <b>{APP}</b> on your <b>{FEED}</b> feed.","Swipe down from the top-right and tap the ⏺ <b>record</b> button.","<b>Scroll for ~30 seconds</b>, then stop. Done — pick the clip next."],
+  android:["Open <b>{APP}</b> on your <b>{FEED}</b> feed.","Swipe down and tap <b>Screen record</b> → Start.","<b>Scroll for ~30 seconds</b>, then stop. Grab the clip next."],
+  desktop:["Open <b>{URL}</b> on your <b>{FEED}</b> feed.","<b>Mac:</b> press <b>⇧⌘5</b>, click <b>Record Entire Screen</b>, then <b>Record</b>. <b>Windows:</b> press <b>⊞+Alt+R</b>.","<b>Scroll</b> for ~30 seconds.","<b>Mac:</b> click the <b>⏹ stop</b> button in the top menu bar — the clip saves to your <b>Desktop</b>. Then upload it next."]
+};
+const SHOTS=["Open <b>{APP}</b> on your <b>{FEED}</b> feed.","<b>Screenshot</b>, scroll a little, screenshot again — <b>about 8 times</b> down your feed.","Drop <b>all the screenshots</b> in at once. That's it."];
+let METHOD="shots", DEVICE="ios";
+function renderSteps(){
+  const p=PLAT_INFO[PLATFORM]||PLAT_INFO.x;
+  const fill=s=>s.replace(/{APP}/g,p.name).replace(/{FEED}/g,p.feed).replace(/{URL}/g,p.site);
+  const box=$("#steps");
+  const list=(METHOD==="shots"?SHOTS:DEV[DEVICE]).map(fill);
+  const tip=METHOD==="shots"
+    ? fill('Grab your <b>{FEED}</b> feed on <b>{APP}</b> — that\'s the algorithm. More screenshots = sharper. <br>Screenshot — <b>Mac:</b> ⇧⌘3 · <b>Windows:</b> ⊞+Shift+S · <b>iPhone:</b> side+volume-up · <b>Android:</b> power+volume-down.')
+    : fill('Record your <b>{FEED}</b> feed on <b>{APP}</b>, not the accounts you follow — that\'s the algorithm. The longer you scroll, the sharper the result.');
+  $("#dev-tabs").style.display = METHOD==="shots" ? "none" : "";
+  if($("#rec-next"))$("#rec-next").textContent = METHOD==="shots" ? "I've got my screenshots →" : "I've got my recording →";
+  box.innerHTML='<ol>'+list.map(s=>'<li>'+s+'</li>').join('')+'</ol><div class="tip"><span>💡</span><span>'+tip+'</span></div>';
+}
+$$("#methods [data-method]").forEach(b=>b.addEventListener("click",()=>{
+  $$("#methods [data-method]").forEach(x=>x.setAttribute("aria-pressed","false"));
+  b.setAttribute("aria-pressed","true");METHOD=b.dataset.method;renderSteps();
+}));
+$$('.platforms .plat[data-plat]').forEach(b=>b.addEventListener("click",()=>{
+  $$('.platforms .plat[data-plat]').forEach(x=>x.setAttribute("aria-pressed","false"));
+  b.setAttribute("aria-pressed","true");PLATFORM=b.dataset.plat;
+  if(VISUAL.has(PLATFORM)){const sm=$('#methods [data-method="shots"]');if(sm)sm.click();}
+  renderSteps();
+}));
+$$("#dev-tabs .dev-tab").forEach(b=>b.addEventListener("click",()=>{
+  $$("#dev-tabs .dev-tab").forEach(x=>x.setAttribute("aria-pressed","false"));
+  b.setAttribute("aria-pressed","true");DEVICE=b.dataset.dev;renderSteps();
+}));
+renderSteps();
+
+/* ---------- upload / dropzone (real on-device OCR via Tesseract.js) ---------- */
+const drop=$("#drop");
+["dragenter","dragover"].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add("hot");}));
+["dragleave","dragend"].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove("hot");}));
+drop.addEventListener("drop",ev=>{ev.preventDefault();drop.classList.remove("hot");handleFiles([...((ev.dataTransfer&&ev.dataTransfer.files)||[])]);});
+$("#file").addEventListener("change",function(){handleFiles([...this.files]);});
+function setProc(msg,pct){$("#proclog").textContent=msg;if(pct!=null)$("#bar").style.width=Math.min(100,pct)+"%";}
+function fauxProgress(from,to){let p=from;$("#bar").style.width=p+"%";const t=setInterval(()=>{p+=(to-p)*0.06+0.4;if(p>=to)p=to;$("#bar").style.width=p+"%";},400);return ()=>clearInterval(t);}
+function showProc(){$("#drop").style.display="none";$("#alt").style.display="none";$("#proc").classList.add("on");$("#bar").style.width="0";}
+function endProc(){$("#proc").classList.remove("on");$("#drop").style.display="block";$("#alt").style.display="block";}
+async function handleFiles(files){
+  files=(files||[]).filter(f=>/^(image|video)\//.test(f.type));
+  if(!files.length){toast("Drop a screenshot or a screen recording");return;}
+  showProc();
+  if(!window.Tesseract){ // sandboxed preview (claude.ai) can't load external code
+    let i=0,steps=["reading frames…","running OCR…","scoring…"];
+    const t=setInterval(()=>{setProc(steps[i]||"",(i+1)/steps.length*100);
+      if(++i>=steps.length){clearInterval(t);setTimeout(()=>{endProc();
+        toast("This preview is sandboxed — open the live site to read a real recording 👇");},450);}},520);
+    return;
+  }
+  try{
+    let posts=null,report=null;
+    if(VISUAL.has(PLATFORM)){                       // Instagram / TikTok — vision
+      setProc("preparing your screenshots…",6);
+      const imgs=await extractImages(files,(i,n)=>setProc("preparing "+i+" / "+n+"…",6+Math.round(i/Math.max(n,1)*40)));
+      if(!imgs.length){setProc("No images found.",100);setTimeout(()=>{endProc();toast("Drop screenshots (or a recording) of your feed.");},1400);return;}
+      setProc("reading "+imgs.length+" images with Nova Pro vision — up to ~20s…",50);
+      const stop=fauxProgress(52,93);               // keep the bar moving while Nova works
+      const nova=await novaAnalyseImages(imgs);
+      stop();
+      if(!nova){setProc("The reader didn't respond.",100);setTimeout(()=>{endProc();toast("Couldn't read that — try 6–8 clear screenshots (screenshots read better than a video), then retry.");},2400);return;}
+      posts=(nova.posts&&nova.posts.length)?novaToPosts(nova):[P("","","(your "+PLATFORM+" feed)",0,0.3,"Culture","Curiosity")];
+      report=novaReport(nova);SCOREDBY="Nova (vision)";
+    } else {                                         // X / YouTube — OCR text
+      const rawText=await extractFromFiles(files);
+      if(!rawText||rawText.replace(/\s/g,"").length<40){setProc("Couldn't read enough text.",100);
+        setTimeout(()=>{endProc();toast("Not enough read — screenshots read best, or pick a sample.");},1300);return;}
+      if(ENGINE==="remote"){setProc("sending to the Sharper reader (Nova)…",95);const nova=await novaAnalyse(rawText);if(nova){posts=novaToPosts(nova);report=novaReport(nova);SCOREDBY="Nova (remote)";}}
+      if(!posts){posts=parsePosts(rawText);await deepEnrich(posts);report=localReport(posts);}
+      if(posts.length<3){setProc("Couldn't read enough posts.",100);
+        setTimeout(()=>{endProc();toast("Not enough posts read — try more screenshots or a sample.");},1300);return;}
+    }
+    setProc("done ✓",100);analyse(posts,"Your feed",report);
+    toast(SCOREDBY.indexOf("Nova")>=0?"Read by Nova 🧠":SCOREDBY==="on-device model"?"Read on-device 🧠":"Scored on-device ⚡");
+    setTimeout(()=>{$("#proc").classList.remove("on");go("dash");},520);
+  }catch(e){console.warn(e);setProc("Couldn't read that file.",100);
+    setTimeout(()=>{endProc();toast("Reading failed — try screenshots, or a sample.");},1300);}
+}
+function imgToCanvas(file){return new Promise((res,rej)=>{const url=URL.createObjectURL(file),im=new Image();
+  im.onload=()=>{const sc=Math.min(1,1100/(im.width||1100)),cv=document.createElement("canvas");
+    cv.width=Math.round(im.width*sc);cv.height=Math.round(im.height*sc);cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);
+    URL.revokeObjectURL(url);res(cv);};im.onerror=()=>{URL.revokeObjectURL(url);rej();};im.src=url;});}
+function videoFrames(file,n){return new Promise((res,rej)=>{const url=URL.createObjectURL(file),v=document.createElement("video");
+  v.preload="auto";v.muted=true;v.playsInline=true;v.src=url;const frames=[],times=[];let idx=0;
+  v.addEventListener("loadedmetadata",()=>{const dur=Math.min(v.duration||20,180);for(let i=0;i<n;i++)times.push(dur*(i+0.5)/n);seek();});
+  function seek(){if(idx>=times.length){URL.revokeObjectURL(url);res(frames);return;}v.currentTime=times[idx];}
+  v.addEventListener("seeked",()=>{const w=v.videoWidth||720,h=v.videoHeight||1280,sc=Math.min(1,1100/w),cv=document.createElement("canvas");
+    cv.width=Math.round(w*sc);cv.height=Math.round(h*sc);cv.getContext("2d").drawImage(v,0,0,cv.width,cv.height);frames.push(cv);idx++;seek();});
+  v.addEventListener("error",()=>{URL.revokeObjectURL(url);rej();});});}
+async function extractFromFiles(files){
+  const canvases=[];
+  for(const f of files)if(f.type.startsWith("image/")){setProc("preparing image…",8);canvases.push(await imgToCanvas(f));}
+  for(const f of files)if(f.type.startsWith("video/")){setProc("grabbing frames from your recording…",14);canvases.push(...await videoFrames(f,6));}
+  setProc("loading the reader (first run downloads it once)…",20);
+  const worker=await Tesseract.createWorker("eng");let text="";
+  for(let i=0;i<canvases.length;i++){setProc("reading "+(i+1)+" / "+canvases.length+" on your device…",22+i/canvases.length*70);
+    try{const r=await worker.recognize(canvases[i]);text+="\n"+r.data.text;}catch(e){}}
+  await worker.terminate();
+  return text;
+}
+function parsePosts(text){
+  const UI=/^(home|explore|notifications|messages|for ?you|following|repost(ed)?|liked|show (more|this thread)|replying to|view|views?|trending|promoted|ad|follow|who to follow|search|post|reply|likes?|bookmark|share|see more|·)$/i;
+  const seen=new Set(),posts=[];
+  text.split("\n").map(s=>s.replace(/\s+/g," ").trim()).forEach(s=>{
+    if(posts.length>=40||s.length<22)return;const words=s.split(" ").filter(Boolean);if(words.length<4)return;
+    if((s.match(/[a-zA-Z]/g)||[]).length/s.length<0.5)return;if(UI.test(s))return;
+    const key=s.slice(0,36).toLowerCase();if(seen.has(key))return;seen.add(key);
+    const sc=score(s);posts.push(P("Your feed","@you",s.slice(0,160),sc.lean,sc.heat,sc.topic,sc.emo));});
+  return posts;
+}
+$$("#view-upload .chip").forEach(c=>c.addEventListener("click",()=>{analyse(PERSONAS[c.dataset.p].posts,PERSONAS[c.dataset.p].title);go("dash");}));
+$$("#view-upload .eng").forEach(b=>b.addEventListener("click",()=>{$$("#view-upload .eng").forEach(x=>x.setAttribute("aria-pressed","false"));b.setAttribute("aria-pressed","true");ENGINE=b.dataset.eng;}));
+async function analysePaste(){const raw=$("#pasteta").value;if(raw.replace(/\s/g,"").length<20){toast("Paste a few lines first");return;}
+  showProc();let posts=null,report=null;
+  if(ENGINE==="remote"){setProc("sending to Nova…",95);const nova=await novaAnalyse(raw);if(nova){posts=novaToPosts(nova);report=novaReport(nova);}}
+  if(!posts){posts=classifyPaste(raw);await deepEnrich(posts);report=localReport(posts);}
+  $("#proc").classList.remove("on");analyse(posts,"Your pasted feed",report);go("dash");}
+window.analysePaste=analysePaste;
+
+/* ================= ANALYSIS ENGINE ================= */
+const TOPICS=["Politics","Culture","Economy","World","Local","Sport","Tech","Life"];
+const EMOS=["Anger","Fear","Contempt","Outrage","Tribal","Curiosity","Hope","Humor"];
+const AV=["#3987e5","#e66767","#fab219","#28c76f","#9085e9","#e87ba4","#37d6c4","#eb6834"];
+function P(n,h,t,l,he,to,em){return {name:n,handle:h,text:t,lean:l,heat:he,topic:to,emo:em};}
+const PERSONAS={
+ balanced:{title:"Balanced diet",posts:[
+  P("Reuters","@Reuters","Central bank holds rates steady; markets little changed as inflation cools.",0,.15,"Economy","Curiosity"),
+  P("Maya Chen","@mayawrites","Public libraries are the best deal in government. Fund them properly and watch a town change.",-.35,.2,"Local","Hope"),
+  P("The Economist","@TheEconomist","The case for lighter-touch regulation: the housing shortage is a supply problem first.",.32,.22,"Economy","Curiosity"),
+  P("Sam Ortiz","@sortiz","Both parties have a point on the housing bill. Supply is real; so are renter protections.",0,.25,"Politics","Curiosity"),
+  P("BBC News","@BBCNews","Ceasefire talks resume; negotiators cite 'cautious progress' on aid corridors.",-.05,.3,"World","Hope"),
+  P("Dana Fields","@danaf","Local team pulled off the comeback of the season. What a match.",0,.2,"Sport","Humor"),
+  P("Jordan Lee","@jlee","Lower taxes and a leaner state aren't heresy — read the WSJ piece, then the Guardian. Both land.",.34,.2,"Politics","Curiosity"),
+  P("City Watch","@citywatch","Council approved the bike-lane pilot 6–3. Climate advocates cheered; drivers are wary.",-.34,.25,"Local","Curiosity"),
+  P("Naomi Park","@naomip","Honestly the flat-tax argument is more coherent than my side admits. Got the actual numbers?",.3,.2,"Economy","Curiosity"),
+  P("Priya N.","@priyacooks","Made my grandmother's dal for the first time. Called her to say thanks.",0,.05,"Life","Hope")]},
+ left:{title:"Left bubble",posts:[
+  P("ProgressNow","@progressnow","Billionaires paid a lower rate than nurses again. The system is working exactly as designed.",-.7,.7,"Economy","Outrage"),
+  P("Ava R.","@avaresists","If you're still 'undecided' at this point you've simply chosen the side of the powerful.",-.6,.75,"Politics","Contempt"),
+  P("Climate Front","@climatefront","They knew for decades and lied. This isn't negligence, it's a crime against the future.",-.6,.8,"World","Anger"),
+  P("The Guardian","@guardian","Analysis: how deregulation quietly gutted worker protections over ten years.",-.5,.45,"Economy","Outrage"),
+  P("Leo M.","@leomsg","Every 'moderate' take on this is just cowardice with better PR.",-.55,.65,"Politics","Contempt"),
+  P("MSNBC","@MSNBC","Panel: the opposition's new bill is a 'direct assault' on basic rights, advocates say.",-.65,.6,"Politics","Outrage"),
+  P("Union Strong","@unionstrong","They'd rather crush the strike than pay a living wage. Solidarity forever.",-.6,.7,"Economy","Anger"),
+  P("Sofia Q.","@sofiaq","Muted three friends today for 'both-sidesing' this. No regrets.",-.5,.55,"Culture","Contempt"),
+  P("EquityDaily","@equitydaily","There is no 'debate' here. There's the truth, and there's their propaganda.",-.7,.75,"Politics","Tribal"),
+  P("Voices Left","@voicesleft","Screenshotting this so we remember who stayed silent when it mattered.",-.6,.65,"Politics","Contempt")]},
+ right:{title:"Right bubble",posts:[
+  P("Patriot Wire","@patriotwire","They want you dependent, disarmed and quiet. Don't give them the satisfaction.",.75,.75,"Politics","Anger"),
+  P("Dale K.","@dalek","If you still trust the mainstream media after all this, I honestly can't help you.",.6,.7,"Culture","Contempt"),
+  P("Border Watch","@borderwatch","Record crossings again. Every family's safety traded for their politics.",.7,.8,"Politics","Fear"),
+  P("Fox News","@FoxNews","Poll: voters say elites are 'out of touch' with everyday Americans on the economy.",.55,.5,"Politics","Outrage"),
+  P("Hank R.","@hankr","The people cheering this have never worked a real job in their lives.",.6,.65,"Economy","Contempt"),
+  P("Faith & Flag","@faithflag","They mock what built this country. We remember. We don't forget.",.7,.7,"Culture","Tribal"),
+  P("Daily Wire","@realDailyWire","Analysis: the new mandate is government overreach dressed up as compassion.",.65,.55,"Politics","Outrage"),
+  P("Liberty Mom","@libertymom","Keep your agenda out of my kid's classroom. That's not extreme, that's a parent.",.6,.7,"Culture","Anger"),
+  P("Gus T.","@gust","Every institution has been captured. Trust your neighbours, not the 'experts'.",.7,.65,"Politics","Fear"),
+  P("Freedom First","@freedom1st","Wake up. This was never about safety. It was always about control.",.75,.75,"Politics","Fear")]},
+ doom:{title:"Outrage spiral",posts:[
+  P("BreakingRage","@breakingrage","BREAKING: everything is worse than they're telling you. Thread. 🧵",.2,.9,"World","Fear"),
+  P("Kell A.","@kella","I can't stop reading about this and I can't look away. It's all rigged.",-.2,.85,"Politics","Fear"),
+  P("Collapse Watch","@collapsewatch","Another sign the whole thing is coming apart. Save this post.",.1,.9,"World","Fear"),
+  P("They Lied","@theylied","Whatever they tell you, assume the opposite. Only sane position now.",.3,.8,"Politics","Contempt"),
+  P("Doom Feed","@doomfeed","10 things they don't want you to notice this week (number 7 is chilling).",0,.85,"Culture","Fear"),
+  P("Ang M.","@angm","I used to be moderate. Then I saw what they're really like. Never again.",.4,.8,"Politics","Anger"),
+  P("Enemy List","@enemylist","Make no mistake: these people are not your neighbours, they're your opposition.",.5,.85,"Politics","Tribal"),
+  P("Panic Hour","@panichour","If this doesn't make you furious you're not paying attention.",-.3,.9,"Politics","Outrage"),
+  P("Fault Lines","@faultlines","There is no middle ground left. You're either with us or against us.",.4,.85,"Politics","Tribal"),
+  P("Red Alert","@redalert247","Do NOT calm down. Calm is exactly what they want. Stay angry.",.2,.95,"Politics","Outrage")]}
+};
+const OUTLETS=[{n:"Reuters",l:0,h:.12},{n:"AP",l:-.02,h:.12},{n:"BBC",l:-.12,h:.2},{n:"Economist",l:-.03,h:.22},
+ {n:"WSJ",l:.14,h:.24},{n:"The Hill",l:0,h:.33},{n:"NPR",l:-.3,h:.28},{n:"NYT",l:-.35,h:.42},{n:"WaPo",l:-.34,h:.44},
+ {n:"CNN",l:-.32,h:.6},{n:"Guardian",l:-.5,h:.5},{n:"MSNBC",l:-.62,h:.72},{n:"Fox",l:.52,h:.66},{n:"NY Post",l:.46,h:.58},
+ {n:"Daily Wire",l:.68,h:.78},{n:"Breitbart",l:.8,h:.82}];
+const BASE_TOPIC={Politics:.16,Culture:.12,Economy:.13,World:.14,Local:.12,Sport:.11,Tech:.11,Life:.11};
+const BASE_TONE={Anger:.06,Fear:.06,Contempt:.04,Outrage:.06,Tribal:.05,Curiosity:.3,Hope:.22,Humor:.21};
+function leanColor(l){return l<=-.55?"#1c5cab":l<=-.2?"#3987e5":l<.2?"#8a8f97":l<.55?"#e66767":"#b33636";}
+
+function stats(posts){const n=posts.length||1;
+  const ml=posts.reduce((s,p)=>s+p.lean,0)/n, mh=posts.reduce((s,p)=>s+p.heat,0)/n;
+  const spread=Math.sqrt(posts.reduce((s,p)=>s+(p.lean-ml)**2,0)/n);
+  let sc=100-Math.abs(ml)*46-mh*34-clamp(.45-spread,0,.45)*44;
+  return {n:posts.length,meanLean:ml,meanHeat:mh,spread,score:Math.round(clamp(sc,2,99))};}
+function shares(posts,keys,f){const c={};keys.forEach(k=>c[k]=0);posts.forEach(p=>{if(c[p[f]]!=null)c[p[f]]++;});
+  const n=posts.length||1,o={};keys.forEach(k=>o[k]=c[k]/n);return o;}
+
+/* tooltip */
+const tt=$("#tt");
+function bindTip(node,title,rows){node.style.cursor="default";
+  node.addEventListener("mouseenter",e=>{tt.querySelector(".tt-t").textContent=title;tt.querySelector(".tt-r").innerHTML=rows;tt.style.opacity="1";mv(e);});
+  node.addEventListener("mousemove",mv);node.addEventListener("mouseleave",()=>tt.style.opacity="0");}
+function mv(e){const p=14;let x=e.clientX+p,y=e.clientY+p,r=tt.getBoundingClientRect();
+  if(x+r.width>innerWidth-8)x=e.clientX-r.width-p;if(y+r.height>innerHeight-8)y=e.clientY-r.height-p;tt.style.left=x+"px";tt.style.top=y+"px";}
+
+function renderCompass(posts,st){
+  const svg=$("#compass");svg.innerHTML="";const W=720,H=540,mL=60,mR=26,mT=28,mB=52,pw=W-mL-mR,ph=H-mT-mB;
+  const X=l=>mL+(clamp(l,-1,1)+1)/2*pw, Y=h=>mT+(1-clamp(h,0,1))*ph;
+  el("rect",{x:X(-.2),y:mT,width:X(.2)-X(-.2),height:ph,fill:"rgba(40,199,111,.06)"},svg);
+  [[-.2],[.2]].forEach(([v])=>el("line",{x1:X(v),y1:mT,x2:X(v),y2:mT+ph,stroke:"rgba(40,199,111,.35)","stroke-dasharray":"3 4"},svg));
+  const mz=el("text",{x:X(0),y:mT+12,fill:"#28c76f","font-size":"11","font-weight":"700","text-anchor":"middle"},svg);mz.textContent="THE MIDDLE";
+  [[-1,"Far left"],[-.5,"Left"],[0,"Center"],[.5,"Right"],[1,"Far right"]].forEach(([v,lab])=>{
+    el("line",{x1:X(v),y1:mT,x2:X(v),y2:mT+ph,stroke:"var(--grid)","stroke-width":v===0?1.4:1},svg);
+    const t=el("text",{x:X(v),y:H-32,fill:"var(--muted)","font-size":"11.5","text-anchor":"middle","font-weight":"600"},svg);t.textContent=lab;});
+  [[0,"Calm"],[.5,"Heated"],[1,"Outraged"]].forEach(([v,lab])=>{
+    el("line",{x1:mL,y1:Y(v),x2:mL+pw,y2:Y(v),stroke:"var(--grid)"},svg);
+    const t=el("text",{x:mL-9,y:Y(v)+4,fill:"var(--muted)","font-size":"11.5","text-anchor":"end","font-weight":"600"},svg);t.textContent=lab;});
+  OUTLETS.forEach(o=>{const g=el("g",{},svg),cx=X(o.l),cy=Y(o.h);
+    el("circle",{cx,cy,r:4,fill:"#c3c2b7",stroke:"var(--surface)","stroke-width":1.3,opacity:.9},g);
+    const t=el("text",{x:cx+7,y:cy+3.5,fill:"var(--ink-2)","font-size":"10.5",opacity:.78},g);t.textContent=o.n;
+    bindTip(g,o.n,"Lean "+o.l.toFixed(2)+" · Heat "+o.h.toFixed(2)+"<br>Reference landmark");});
+  posts.forEach((p,i)=>{const d=el("circle",{cx:X(p.lean)+(seed(i)-.5)*10,cy:Y(p.heat)+(seed(i+9)-.5)*10,r:5,fill:"var(--accent)",opacity:.42,stroke:"#0b0e11","stroke-width":1},svg);
+    bindTip(d,p.name,p.text.slice(0,66)+"…");});
+  const cx=X(st.meanLean),cy=Y(st.meanHeat);
+  const rx=Math.max(14,st.spread*pw*.9),ry=Math.max(14,Math.min(58,st.spread*ph*1.4+18));
+  el("ellipse",{cx,cy,rx,ry,fill:"rgba(55,214,196,.1)",stroke:"var(--accent)","stroke-width":1.2,"stroke-dasharray":"4 4",opacity:.8},svg);
+  const core=el("circle",{cx,cy,r:11,fill:"var(--accent)",stroke:"#04110f","stroke-width":2.5},svg);core.setAttribute("class","you-center");
+  bindTip(core,"Your feed","Center: lean "+st.meanLean.toFixed(2)+" · heat "+st.meanHeat.toFixed(2));
+  const yl=el("text",{x:cx,y:cy-15,fill:"var(--accent)","font-size":"12","font-weight":"800","text-anchor":"middle"},svg);yl.setAttribute("class","you-center");yl.textContent="YOU";
+}
+function renderLeanBar(posts){const svg=$("#leanbar");svg.innerHTML="";
+  const bins=[{k:"Far left",c:"#1c5cab",n:0},{k:"Left",c:"#3987e5",n:0},{k:"Center",c:"#8a8f97",n:0},{k:"Right",c:"#e66767",n:0},{k:"Far right",c:"#b33636",n:0}];
+  posts.forEach(p=>{const l=p.lean;bins[l<=-.55?0:l<=-.2?1:l<.2?2:l<.55?3:4].n++;});
+  const total=posts.length||1,W=720,bw=W-4,y=8,h=40,gap=3;let x=2;
+  bins.forEach(b=>{const w=b.n/total*bw;if(w>0){const seg=Math.max(w-gap,2);
+    const r=el("rect",{x,y,width:seg,height:h,rx:4,fill:b.c},svg);bindTip(r,b.k,b.n+" of "+total+" · "+Math.round(b.n/total*100)+"%");
+    if(w>44){const t=el("text",{x:x+seg/2,y:y+h/2+5,fill:"#fff","font-size":"13","font-weight":"800","text-anchor":"middle"},svg);t.textContent=Math.round(b.n/total*100)+"%";}}x+=w;});
+  x=2;bins.forEach(b=>{const w=b.n/total*bw;if(w>34){const t=el("text",{x:x+w/2,y:y+h+21,fill:"var(--ink-2)","font-size":"11.5","text-anchor":"middle","font-weight":"600"},svg);t.textContent=b.k;}x+=w;});}
+function renderRadar(id,keys,you,base,mx){const svg=$(id);svg.innerHTML="";const W=340,H=316,cx=170,cy=150,R=104,N=keys.length;
+  const ang=i=>-Math.PI/2+i*2*Math.PI/N, pt=(i,v)=>[cx+Math.cos(ang(i))*R*clamp(v/mx,0,1),cy+Math.sin(ang(i))*R*clamp(v/mx,0,1)];
+  [.25,.5,.75,1].forEach(f=>{let d="";for(let i=0;i<=N;i++){const a=ang(i%N);d+=(i?"L":"M")+(cx+Math.cos(a)*R*f).toFixed(1)+" "+(cy+Math.sin(a)*R*f).toFixed(1)+" ";}el("path",{d:d+"Z",fill:"none",stroke:"var(--grid)","stroke-width":f===1?1.3:1},svg);});
+  keys.forEach((k,i)=>{const a=ang(i);el("line",{x1:cx,y1:cy,x2:cx+Math.cos(a)*R,y2:cy+Math.sin(a)*R,stroke:"var(--grid)"},svg);
+    const lx=cx+Math.cos(a)*(R+16),ly=cy+Math.sin(a)*(R+16),an=Math.abs(Math.cos(a))<.3?"middle":Math.cos(a)>0?"start":"end";
+    const t=el("text",{x:lx,y:ly+3,fill:"var(--ink-2)","font-size":"10.5","text-anchor":an,"font-weight":"600"},svg);t.textContent=k;});
+  function poly(o,fill,stroke,sw,dash){let d="";keys.forEach((k,i)=>{const[x,y]=pt(i,o[k]||0);d+=(i?"L":"M")+x.toFixed(1)+" "+y.toFixed(1)+" ";});const pp=el("path",{d:d+"Z",fill,stroke,"stroke-width":sw},svg);if(dash)pp.setAttribute("stroke-dasharray",dash);}
+  poly(base,"none","var(--muted)",1.6,"4 4");poly(you,"rgba(55,214,196,.18)","var(--accent)",2.2);
+  keys.forEach((k,i)=>{const[x,y]=pt(i,you[k]||0);const dot=el("circle",{cx:x,cy:y,r:4,fill:"var(--accent)",stroke:"#0b0e11","stroke-width":1.5},svg);
+    bindTip(dot,k,"Your feed: "+Math.round((you[k]||0)*100)+"%<br>Calm diet: "+Math.round((base[k]||0)*100)+"%");});
+  const g=el("g",{},svg);el("line",{x1:12,y1:H-8,x2:28,y2:H-8,stroke:"var(--accent)","stroke-width":2.4},g);
+  const a1=el("text",{x:32,y:H-5,fill:"var(--ink-2)","font-size":"10.5"},g);a1.textContent="You";
+  el("line",{x1:70,y1:H-8,x2:86,y2:H-8,stroke:"var(--muted)","stroke-width":1.6,"stroke-dasharray":"4 4"},g);
+  const a2=el("text",{x:90,y:H-5,fill:"var(--ink-2)","font-size":"10.5"},g);a2.textContent="Calm diet";}
+
+let ARCH={n:"",e:"",tag:"",pct:"",vibe:"#37d6c4"};
+function renderArch(posts,st){
+  const ts=shares(posts,TOPICS,"topic");let tK="Politics",tm=0;TOPICS.forEach(k=>{if(ts[k]>tm){tm=ts[k];tK=k;}});
+  const left=st.meanLean<0;let a;
+  if(st.meanHeat>=.72)a={e:"🌪️",n:"The Doom Spiral",v:"#e0484a",t:"Your feed is basically an outrage vending machine — and it keeps handing you tokens. Not your fault; that's the product."};
+  else if(tm>=.5&&(tK==="Politics"||tK==="Culture")&&st.meanHeat>=.5)a={e:"⚔️",n:"The Culture Warrior",v:"#ec835a",t:"Every scroll is a battle. The algorithm clocked that you fight back — so it ordered more."};
+  else if(tm>=.5)a={e:"🔭",n:"The One-Track Feed",v:"#9085e9",t:"Your algorithm decided you have exactly one interest ("+tK.toLowerCase()+"). Bold of it."};
+  else if(Math.abs(st.meanLean)>=.45&&st.spread<.24)a={e:left?"🔵":"🔴",n:left?"The Left Echo":"The Right Echo",v:left?"#3987e5":"#e66767",t:"Your algorithm has you filed under Team "+(left?"Blue":"Red")+" and quietly stopped showing you the away fixtures."};
+  else if(st.score>=72&&st.meanHeat<.4)a={e:"🧘",n:"The Zen Centrist",v:"#28c76f",t:"Cool as a cucumber — and it actually lets the other side in. Your feed forgot to make you angry today. Rare."};
+  else if(Math.abs(st.meanLean)>=.22)a={e:"🧭",n:left?"Drifting Left":"Drifting Right",v:left?"#3987e5":"#e66767",t:"Still a bit of everything — but the walls are quietly inching "+(left?"left":"right")+"."};
+  else a={e:"🥗",n:"The Balanced Diet",v:"#28c76f",t:"A genuine spread of views and moods. Whatever you're doing, keep doing it."};
+  const bubble=clamp(Math.round(95-st.score*.9),3,97);
+  const pct=st.score>=66?"Calmer than "+(100-bubble)+"% of feeds 🌤️":"More bubbled than "+bubble+"% of feeds 🫧";
+  const arch=$("#arch");arch.style.setProperty("--vibe",a.v+"2b");arch.style.setProperty("--vibe-solid",a.v+"aa");
+  $("#a-emoji").textContent=a.e;$("#a-name").textContent=a.n;$("#a-name").style.color=a.v;$("#a-tag").textContent=a.t;$("#a-pct").textContent=pct;
+  ARCH={n:a.n,e:a.e,tag:a.t,pct,vibe:a.v};
+}
+function renderVerdict(st){
+  $("#score").textContent=st.score;
+  $("#score").style.color=st.score>=70?"var(--good)":st.score>=50?"var(--warn)":st.score>=32?"var(--serious)":"var(--crit)";
+  const dir=st.meanLean<=-.45?"leans strongly left":st.meanLean<=-.18?"leans left":st.meanLean<.18?"sits near the center":st.meanLean<.45?"leans right":"leans strongly right";
+  const heat=st.meanHeat>=.7?"and runs very hot":st.meanHeat>=.45?"and runs warm":"and stays fairly calm";
+  const range=st.spread<.18?"You're rarely shown the other side.":st.spread<.32?"You see some range, but it's narrowing.":"You're shown a genuine spread of views.";
+  $("#verdict-head").innerHTML="Your feed <b style='color:"+leanColor(st.meanLean)+"'>"+dir+"</b> "+heat+". "+range;
+  $("#v-lean").textContent=st.meanLean<-.05?Math.abs(st.meanLean).toFixed(2)+" left":st.meanLean>.05?st.meanLean.toFixed(2)+" right":"~centered";
+  $("#v-lean").style.color=leanColor(st.meanLean);
+  $("#v-spread").textContent=st.spread<.18?"Narrow":st.spread<.32?"Moderate":"Wide";
+  $("#v-heat").textContent=Math.round(st.meanHeat*100)+"/100";
+  $("#v-heat").style.color=st.meanHeat>=.66?"var(--crit)":st.meanHeat>=.4?"var(--serious)":"var(--good)";
+}
+let EXTRA={char:"🌀 —",topic:"—"};
+/* political spectrum dial — symmetric, playful characters + a "most people" marker */
+const SPEC=[{p:-1,e:"✊",n:"The Revolutionary"},{p:-.5,e:"🌱",n:"The Activist"},{p:0,e:"⚖️",n:"The Centrist"},{p:.5,e:"🦅",n:"The Patriot"},{p:1,e:"🎖️",n:"The Hardliner"}];
+let LASTLEAN=0;
+const PARTIES={
+ US:{flag:"🇺🇸",list:[["the Progressive left",-.8],["Democrats",-.4],["Republicans",.4],["the MAGA right",.8]]},
+ UK:{flag:"🇬🇧",list:[["the Greens",-.7],["Labour",-.35],["the Lib Dems",-.05],["Conservatives",.4],["Reform UK",.8]]},
+ AU:{flag:"🇦🇺",list:[["the Greens",-.7],["Labor",-.3],["the Liberal/Nationals",.4],["One Nation",.85]]},
+ CA:{flag:"🇨🇦",list:[["the NDP",-.6],["Liberals",-.25],["Conservatives",.45],["the PPC",.8]]}
+};
+function renderParty(){
+  const c=($("#country")&&$("#country").value)||"US",pk=PARTIES[c]||PARTIES.US;
+  let best=pk.list[0],bd=9;pk.list.forEach(p=>{const d=Math.abs(p[1]-LASTLEAN);if(d<bd){bd=d;best=p;}});
+  const conf=bd<.18?"aligns closest to":bd<.4?"leans toward":"is nearest to";
+  const col=best[1]<-.05?"var(--l1)":best[1]>.05?"var(--r1)":"var(--ink)";
+  if($("#party"))$("#party").innerHTML='On '+pk.flag+', your feed <b>'+conf+'</b> <b style="color:'+col+'">'+best[0]+'</b>.';
+}
+window.renderParty=renderParty;
+function renderSpectrum(st){
+  const svg=$("#spectrum");svg.innerHTML="";const W=640,mL=44,mR=44,pw=W-mL-mR,bar=112;
+  const X=l=>mL+(clamp(l,-1,1)+1)/2*pw;
+  const defs=el("defs",{},svg),g=el("linearGradient",{id:"specgrad",x1:"0",x2:"1"},defs);
+  [["0","#3987e5"],["0.5","#8a8f97"],["1","#e66767"]].forEach(([o,c])=>el("stop",{offset:o,"stop-color":c},g));
+  el("rect",{x:X(-.18),y:bar-9,width:X(.18)-X(-.18),height:30,rx:8,fill:"rgba(40,199,111,.10)",stroke:"rgba(40,199,111,.35)","stroke-dasharray":"3 3"},svg);
+  el("rect",{x:mL,y:bar,width:pw,height:12,rx:6,fill:"url(#specgrad)"},svg);
+  SPEC.forEach(s=>{const t=el("text",{x:X(s.p),y:66,"font-size":"25","text-anchor":"middle"},svg);t.textContent=s.e;});
+  [["Far left",-1],["Left",-.5],["Center",0],["Right",.5],["Far right",1]].forEach(([lab,p])=>{const t=el("text",{x:X(p),y:150,fill:"var(--muted)","font-size":"10.5","text-anchor":"middle","font-weight":"600"},svg);t.textContent=lab;});
+  const tx=X(0);el("circle",{cx:tx,cy:bar+6,r:6,fill:"var(--muted)",stroke:"#04110f","stroke-width":2},svg);
+  const tl=el("text",{x:tx,y:bar+30,fill:"var(--good)","font-size":"10","font-weight":"700","text-anchor":"middle"},svg);tl.textContent="most feeds";
+  const nx=X(st.meanLean);
+  el("line",{x1:nx,y1:84,x2:nx,y2:bar+12,stroke:"var(--accent)","stroke-width":2,"stroke-dasharray":"3 3"},svg);
+  el("circle",{cx:nx,cy:bar+6,r:8.5,fill:"var(--accent)",stroke:"#04110f","stroke-width":2.5},svg);
+  const yl=el("text",{x:nx,y:100,fill:"var(--accent)","font-size":"11","font-weight":"800","text-anchor":"middle"},svg);yl.textContent="YOU";
+  let best=SPEC[2],bd=9;SPEC.forEach(s=>{const d=Math.abs(s.p-st.meanLean);if(d<bd){bd=d;best=s;}});
+  const dirw=st.meanLean<-.05?Math.abs(st.meanLean).toFixed(2)+" to the left":st.meanLean>.05?st.meanLean.toFixed(2)+" to the right":"dead centre";
+  const gap=Math.abs(st.meanLean)>.45?"a long way from where most people sit":Math.abs(st.meanLean)>.2?"a clear step from the middle":"right about where most people sit";
+  $("#spec-label").innerHTML='<span class="big">'+best.e+' '+best.n+'</span><div class="sub">Your feed sits <b>'+dirw+'</b> — '+gap+'.</div>';
+  EXTRA.char=best.e+" "+best.n;LASTLEAN=st.meanLean;renderParty();
+}
+const TEMO={Politics:"🏛️",Culture:"🎭",Economy:"💰",World:"🌍",Local:"🏙️",Sport:"⚽",Tech:"🤖",Life:"🌿"};
+function renderFed(posts){
+  const sh=shares(posts,TOPICS,"topic");
+  const sorted=TOPICS.map(k=>({k,v:sh[k]})).filter(o=>o.v>0).sort((a,b)=>b.v-a.v);
+  const top=sorted[0]||{k:"—",v:0};
+  const dom=top.v>=.45?"That's tunnel vision — a normal feed spreads across everything; yours keeps hammering one lane.":
+    top.v>=.3?"It leans hard on one lane — more than a typical feed.":"A reasonably mixed diet, close to normal.";
+  let html='<div class="fed-head">You\'re mostly being fed <b style="color:var(--accent)">'+(TEMO[top.k]||"")+' '+top.k+'</b> — '+Math.round(top.v*100)+'% of everything you see. '+dom+'</div><div class="fed-row">';
+  sorted.slice(0,5).forEach((o,i)=>{html+='<div class="fed-item'+(i===0?' top':'')+'"><div class="em">'+(TEMO[o.k]||"")+'</div>'+
+    '<div><div class="nm">'+o.k+'</div><div class="track"><i style="width:'+Math.round(o.v*100)+'%"></i></div></div><div class="pct">'+Math.round(o.v*100)+'%</div></div>';});
+  $("#fed").innerHTML=html+'</div>';
+  EXTRA.topic=(TEMO[top.k]||"")+" "+top.k;
+}
+let SCOREDBY="quick heuristic";
+async function deepEnrich(posts){
+  SCOREDBY="quick heuristic";
+  if(!posts.length||!window.loadDeep||!window.deepClassify) return posts;
+  try{
+    setProc("loading the on-device reader (one-time download)…",90);
+    await window.loadDeep(p=>{ if(p&&typeof p.progress==="number") setProc("downloading the reader "+Math.round(p.progress)+"% (one-time, then cached)…",90); });
+    const res=await window.deepClassify(posts.map(p=>p.text),(i,n)=>setProc("model reading "+i+" / "+n+" on your device…",92+Math.round(i/n*7)));
+    if(res&&res.length===posts.length){posts.forEach((p,i)=>{const s=res[i];if(s){p.lean=s.lean;p.heat=s.heat;p.topic=s.topic;p.emo=s.emo;}});SCOREDBY="on-device model";}
+  }catch(e){console.warn("deep enrich failed, keeping heuristic",e);}
+  return posts;
+}
+/* ---------- engine (local vs remote Nova) + the narrative report ---------- */
+const API_URL="https://r2i1aw70ki.execute-api.us-east-1.amazonaws.com";
+let ENGINE="local", REPORT=null;
+const VISUAL=new Set(["instagram","tiktok"]);
+function c1(v){v=+v;return isFinite(v)?Math.max(-1,Math.min(1,v)):0;}
+function c01(v){v=+v;return isFinite(v)?Math.max(0,Math.min(1,v)):0;}
+function normTopic(t){return TOPICS.indexOf(t)>=0?t:"Life";}
+function normEmo(e){return EMOS.indexOf(e)>=0?e:"Curiosity";}
+async function novaAnalyse(rawText){
+  try{
+    const country=($("#country")&&$("#country").value)||"US";
+    const r=await fetch(API_URL,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({feedText:rawText.slice(0,12000),country,platform:PLATFORM})});
+    if(!r.ok)return null;
+    const d=await r.json();
+    return (d&&Array.isArray(d.posts)&&d.posts.length)?d:null;
+  }catch(e){console.warn("nova failed",e);return null;}
+}
+async function novaAnalyseImages(images){
+  try{
+    const ctrl=new AbortController();const to=setTimeout(()=>ctrl.abort(),50000);
+    const r=await fetch(API_URL,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({images,platform:PLATFORM}),signal:ctrl.signal});
+    clearTimeout(to);
+    if(!r.ok){console.warn("nova vision HTTP",r.status);return null;}
+    const d=await r.json();
+    if(d&&d.error)console.warn("nova vision error",d.error);
+    return (d&&(d.reinforcing||(Array.isArray(d.posts)&&d.posts.length)))?d:null;
+  }catch(e){console.warn("nova vision failed",e);return null;}
+}
+async function extractImages(files,onProg){
+  const canvases=[];
+  for(const f of files)if(f.type.startsWith("image/")){canvases.push(await imgToCanvas(f));if(onProg)onProg(canvases.length,files.length);}
+  for(const f of files)if(f.type.startsWith("video/"))canvases.push(...await videoFrames(f,10));
+  return canvases.slice(0,8).map(cv=>cv.toDataURL("image/jpeg",0.82).split(",")[1]);
+}
+function novaToPosts(d){return d.posts.map(p=>{const h=(p.author||"").trim();const q=P(h,h,String(p.text||"").slice(0,160),c1(p.lean),c01(p.heat),normTopic(p.topic),normEmo(p.emo));q.bot=c01(p.bot);return q;});}
+function novaReport(d){return {engine:"Nova (remote)",highlight:d.highlight||"",reinforcing:d.reinforcing||"",makesYou:d.makesYou||{},howInfluencing:d.howInfluencing||"",blindSpots:d.blindSpots||[],accounts:d.accounts||[],suggestions:d.suggestions||[],aiSlopPct:(typeof d.aiSlopPct==="number")?Math.round(d.aiSlopPct):null};}
+function localReport(posts){
+  const sh=shares(posts,TOPICS,"topic"),sorted=TOPICS.map(k=>({k,v:sh[k]})).sort((a,b)=>b.v-a.v),top=sorted[0]||{k:"—",v:0};
+  const blind=sorted.filter(o=>o.v<0.04).slice(0,3).map(o=>"barely any "+o.k.toLowerCase());
+  const avgBot=posts.reduce((s,p)=>s+(p.bot||0),0)/(posts.length||1);
+  return {engine:"on-device (rough)",
+    highlight:"Mostly "+top.k+" — "+Math.round(top.v*100)+"% of what you saw.",
+    reinforcing:"Your feed is dominated by <b>"+top.k+"</b> — "+Math.round(top.v*100)+"% of what you saw. The algorithm keeps serving you the same lane.",
+    makesYou:{be:"someone defined by "+top.k.toLowerCase(),feel:"switch to Sharper (Nova) to read the emotional pull",buy:"whatever "+top.k.toLowerCase()+" is selling"},
+    howInfluencing:"By repetition — hammering one topic and crowding out the rest.",
+    blindSpots:blind.length?blind:["a genuine mix of topics"],accounts:[],
+    suggestions:[{toGet:"the full narrative + per-account read + real suggestions",do:"Switch to the 🧠 Sharper (Nova) reader — the on-device model can score, but only the LLM can write the story."}],
+    aiSlopPct:avgBot?Math.round(avgBot*100):null};
+}
+function renderReport(rep){
+  $("#report-engine").textContent=rep.engine?"· "+rep.engine:"";
+  const my=rep.makesYou||{};
+  let h="";
+  if(rep.highlight)h+='<div class="read-highlight">“'+rep.highlight+'”</div>';
+  h+='<div class="read-hero">'+(rep.reinforcing||"")+'</div>';
+  h+='<div class="bfb"><div class="cell"><div class="k">Makes you… be</div><div class="v">'+(my.be||"—")+'</div></div>'+
+     '<div class="cell"><div class="k">…feel</div><div class="v">'+(my.feel||"—")+'</div></div>'+
+     '<div class="cell"><div class="k">…buy</div><div class="v">'+(my.buy||"—")+'</div></div></div>';
+  if(rep.howInfluencing)h+='<div class="how"><b>How it works on you:</b> '+rep.howInfluencing+'</div>';
+  if(rep.blindSpots&&rep.blindSpots.length)h+='<div class="how"><b>What it hides from you:</b><div class="blind">'+rep.blindSpots.map(b=>'<div class="bi">🚫 '+b+'</div>').join('')+'</div></div>';
+  if(rep.aiSlopPct!=null)h+='<div class="slop">🤖 est. bot / low-effort content <div class="bar"><i style="width:'+rep.aiSlopPct+'%"></i></div> ~'+rep.aiSlopPct+'% <span style="color:var(--muted)">(a rough guess)</span></div>';
+  $("#report").innerHTML=h;
+}
+function renderAccounts(accts){
+  const card=$("#accounts-card");
+  if(!accts||!accts.length){card.style.display="none";return;}
+  card.style.display="";
+  $("#accounts").innerHTML=accts.slice(0,6).map(a=>{const l=c1(a.lean),lc=leanColor(l),lt=l<=-.55?"Far left":l<=-.2?"Left":l<.2?"Neutral":l<.55?"Right":"Far right";
+    return '<div class="acct"><div class="h">'+(a.handle||"@?")+'</div>'+
+      '<span class="lean" style="background:'+lc+'22;color:'+lc+';border:1px solid '+lc+'66">'+lt+'</span>'+
+      '<span class="share">'+(a.share!=null?Math.round(c01(a.share)*100)+"%":"")+'</span>'+
+      '<div class="n">'+(a.note||"")+'</div></div>';}).join('')+
+      '<div class="acct-note">Lean is estimated from the posts we saw plus what the model knows about each account — solid for well-known accounts, a rough guess for smaller ones. Indicative, not a verdict.</div>';
+}
+function renderSuggestions(sugs){
+  const card=$("#sugg-card");
+  if(!sugs||!sugs.length){card.style.display="none";return;}
+  card.style.display="";
+  $("#suggestions").innerHTML='<div class="sug">'+sugs.slice(0,4).map(s=>'<div class="s"><div class="g">To get '+(s.toGet||"more balance")+'</div><div class="d">→ '+(s.do||"")+'</div></div>').join('')+'</div>';
+}
+function saveHistory(st){try{const h=JSON.parse(localStorage.getItem("ds_history")||"[]");
+  h.push({t:Date.now(),lean:+st.meanLean.toFixed(2),heat:+st.meanHeat.toFixed(2),score:st.score,topic:EXTRA.topic,arch:ARCH.n});
+  while(h.length>40)h.shift();localStorage.setItem("ds_history",JSON.stringify(h));}catch(e){}}
+function renderHistory(){
+  let h=[];try{h=JSON.parse(localStorage.getItem("ds_history")||"[]");}catch(e){}
+  const card=$("#history-card");
+  if(h.length<2){card.style.display="none";return;}
+  card.style.display="";
+  const fmt=t=>{try{return new Date(t).toLocaleDateString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});}catch(e){return"";}};
+  const sc=e=>e.score>=70?"var(--good)":e.score>=50?"var(--warn)":e.score>=32?"var(--serious)":"var(--crit)";
+  $("#history").innerHTML='<div class="hist">'+h.slice(-8).reverse().map(e=>'<div class="row"><span class="d">'+fmt(e.t)+'</span><span>'+(e.arch||"")+' · '+(e.topic||"")+'</span><span style="color:'+sc(e)+';font-weight:800">'+e.score+'</span></div>').join('')+
+    '</div><div class="how" style="border:none;padding-top:8px">Come back after a few days of scrolling to see whether your feed\'s balance and heat are trending up or down.</div>';
+}
+async function pingAgg(score){
+  try{
+    const r=await fetch(API_URL,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({stat:score})});
+    if(!r.ok)return;const d=await r.json();
+    if(d&&typeof d.moreBubbledThan==="number"&&d.samples>=8){
+      $("#agg-card").style.display="";
+      $("#agg").innerHTML='<div class="read-highlight">You\'re more bubbled than <b>'+d.moreBubbledThan+'%</b> of feeds.</div>'+
+        '<div class="how" style="border:none;padding-top:0">Across '+d.samples.toLocaleString()+' feeds analysed on doomscroll.stats. Lower balance = more bubbled. Only the number is stored — never your feed.</div>';
+    }
+  }catch(e){}
+}
+let LASTPOSTS=[],LASTSTATS={},LASTTITLE="";
+function exportData(){
+  if(!LASTPOSTS.length){toast("Analyse a feed first");return;}
+  const d={source:LASTTITLE,scoredBy:SCOREDBY,count:LASTPOSTS.length,
+    stats:{meanLean:+(LASTSTATS.meanLean||0).toFixed(3),meanHeat:+(LASTSTATS.meanHeat||0).toFixed(3),spread:+(LASTSTATS.spread||0).toFixed(3),balanceScore:LASTSTATS.score},
+    archetype:ARCH.n,character:EXTRA.char,topFed:EXTRA.topic,
+    topicShares:shares(LASTPOSTS,TOPICS,"topic"),toneShares:shares(LASTPOSTS,EMOS,"emo"),
+    posts:LASTPOSTS.map(p=>({text:p.text,lean:+(+p.lean).toFixed(2),heat:+(+p.heat).toFixed(2),topic:p.topic,emo:p.emo}))};
+  const json=JSON.stringify(d,null,2);
+  const a=document.createElement("a");a.download="doomscroll-data.json";a.href="data:application/json;charset=utf-8,"+encodeURIComponent(json);a.click();
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(json).then(()=>toast("Data copied + downloaded — paste it here to debug 🐞")).catch(()=>toast("Downloaded doomscroll-data.json"));
+  else toast("Downloaded doomscroll-data.json");
+}
+window.exportData=exportData;
+function analyse(posts,title,report){LASTPOSTS=posts;LASTTITLE=title||"";const st=stats(posts);LASTSTATS=st;
+  renderArch(posts,st);renderSpectrum(st);renderFed(posts);renderVerdict(st);renderCompass(posts,st);renderLeanBar(posts);
+  renderRadar("#radar-topic",TOPICS,shares(posts,TOPICS,"topic"),BASE_TOPIC,.5);
+  renderRadar("#radar-tone",EMOS,shares(posts,EMOS,"emo"),BASE_TONE,.45);
+  REPORT=report||localReport(posts);
+  renderReport(REPORT);renderAccounts(REPORT.accounts);renderSuggestions(REPORT.suggestions);
+  saveHistory(st);renderHistory();pingAgg(st.score);
+  const vis=VISUAL.has(PLATFORM);  // hide the political (X-only) cards on visual platforms
+  ["#compass","#spectrum","#leanbar"].forEach(sel=>{const e2=$(sel),c=e2&&e2.closest(".card");if(c)c.style.display=vis?"none":"";});
+}
+window.analyse=analyse;
+
+/* heuristic classifier — word-boundary matched, neutral default (rough; the LLM proxy is the real scorer) */
+const LR=["woke","mainstream media","overreach","big government","open borders","radical left","patriot","maga","gun rights","pro-life","deep state","globalist","america first"];
+const LL=["billionaires","systemic","living wage","climate crisis","reproductive rights","tax the rich","far right","fascist","white supremacy","medicare for all","late-stage capitalism","eat the rich"];
+const LH=["breaking","furious","rigged","lied","crime","enemy","outrage","destroy","evil","corrupt","disgrace","traitor","wake up","scam","!!"];
+const TL={
+ Politics:["vote","voter","election","senate","congress","parliament","government","policy","politician","democrat","republican","labour","tory","president","legislation","immigration","potus"],
+ Economy:["inflation","tax","taxes","wage","wages","gdp","recession","economy","interest rate","stocks","jobs","housing","mortgage","tariff","fed"],
+ World:["war","ceasefire","gaza","ukraine","russia","china","israel","border","refugees","climate","nato"],
+ Culture:["woke","gender","religion","abortion","celebrity","movie","music","comedy","culture","art"],
+ Tech:["ai","a.i.","llm","gpt","chatgpt","openai","anthropic","claude","gemini","grok","model","models","agent","agents","neural","ml","inference","gpu","nvidia","chip","chips","startup","startups","software","app","apps","code","coding","developer","api","crypto","bitcoin","ethereum","blockchain","token","tokens","tech","robot","robotics","cloud","saas","launch","shipped","open source","spacex","starlink","fcc","spectrum","broadband"],
+ Sport:["match","goal","league","cup","nba","nfl","premier league","football","cricket","tennis","golf"],
+ Local:["council","library","mayor","planning permission"],
+ Life:["recipe","family","wedding","dog","cat","garden","holiday","coffee","gym","birthday"]
+};
+const EL={
+ Anger:["angry","furious","rage","crush","destroy","sick of"],
+ Fear:["breaking","collapse","warning","chilling","danger","scared","threat"],
+ Contempt:["cowardice","pathetic","clueless","mock","laughable","embarrassing"],
+ Outrage:["outrage","assault","disgrace","how dare","unacceptable","scandal"],
+ Tribal:["us vs them","our side","the enemy","never forget","stand together"],
+ Curiosity:["why","how","interesting","analysis","study","curious","wonder","thread"],
+ Hope:["progress","hope","exciting","optimistic","promising","grateful"],
+ Humor:["lol","lmao","haha","joke","funny","meme"]
+};
+function count(text,list){let n=0;for(const w of list){
+  if(/^[\w ]+$/.test(w)){ if(new RegExp("\\b"+w.replace(/ /g,"\\s+")+"\\b","i").test(text)) n++; }
+  else { if(text.toLowerCase().includes(w.toLowerCase())) n++; }
+}return n;}
+function score(text){
+  const r=count(text,LR),l=count(text,LL),h=count(text,LH);
+  const caps=(text.match(/[A-Z]/g)||[]).length/Math.max(text.length,1);
+  let topic="Life",tb=0;for(const k in TL){const s=count(text,TL[k]);if(s>tb){tb=s;topic=k;}}
+  let emo="Curiosity",eb=0;for(const k in EL){const s=count(text,EL[k]);if(s>eb){eb=s;emo=k;}}
+  const heat=clamp(.15+h*.16+caps*.6,0,1);if(heat>.6&&eb===0)emo="Outrage";
+  return {lean:clamp((r-l)*.35,-1,1),heat,topic,emo};
+}
+function classifyPaste(raw){return raw.split(/\n+/).map(s=>s.trim()).filter(s=>s.length>3).map(line=>{const s=score(line);return P("You","@you",line.slice(0,140),s.lean,s.heat,s.topic,s.emo);});}
+
+/* ---------- share ---------- */
+function openShare(){drawCard();$("#modal").classList.add("on");}
+function closeShare(){$("#modal").classList.remove("on");}
+window.openShare=openShare;window.closeShare=closeShare;
+function drawCard(){const c=$("#sharecanvas"),x=c.getContext("2d"),W=600,H=600;
+  const g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,ARCH.vibe+"33");g.addColorStop(.55,"#15181c");g.addColorStop(1,"#0c0e11");
+  x.fillStyle="#0c0e11";x.fillRect(0,0,W,H);x.fillStyle=g;x.fillRect(0,0,W,H);
+  x.textAlign="center";
+  const plat=(PLAT_INFO[PLATFORM]&&PLAT_INFO[PLATFORM].name)||"";
+  x.font="700 15px ui-sans-serif,system-ui,sans-serif";x.fillStyle="#a6abb4";x.fillText(("MY "+plat+" FEED IS…").toUpperCase(),W/2,78);
+  x.font="72px sans-serif";x.fillText(ARCH.e,W/2,172);
+  const hl=(REPORT&&REPORT.highlight)?REPORT.highlight:ARCH.tag;   // the highlight is the star
+  x.font="italic 27px Georgia,serif";x.fillStyle="#37d6c4";
+  const yEnd=wrap(x,"“"+hl+"”",W/2,232,520,34);
+  x.font="700 17px ui-sans-serif,system-ui,sans-serif";x.fillStyle="#c3c8ce";
+  x.fillText(ARCH.e+" "+ARCH.n+"  ·  "+EXTRA.topic,W/2,Math.min(yEnd+40,472));
+  x.font="700 16px ui-sans-serif,system-ui,sans-serif";x.fillStyle="#a6abb4";
+  x.fillText(ARCH.pct.replace(/[🌤️🫧]/g,"").trim(),W/2,506);
+  x.font="800 21px ui-sans-serif,system-ui,sans-serif";x.fillStyle="#f3f5f7";x.fillText("doomscroll",W/2-36,554);
+  x.fillStyle="#697079";x.fillText(".stats",W/2+54,554);
+  x.font="14px ui-sans-serif,system-ui,sans-serif";x.fillStyle="#697079";x.fillText("what's yours?",W/2,580);
+}
+function wrap(x,text,cx,y,maxw,lh){const words=text.split(" ");let line="",yy=y;
+  for(const w of words){const test=line+w+" ";if(x.measureText(test).width>maxw&&line){x.fillText(line.trim(),cx,yy);line=w+" ";yy+=lh;}else line=test;}x.fillText(line.trim(),cx,yy);return yy;}
+function copyCaption(){const hl=(REPORT&&REPORT.highlight)?REPORT.highlight:ARCH.n;const cap=ARCH.e+" My feed is: "+hl+" — "+ARCH.pct.replace(/[🌤️🫧]/g,"").trim()+". What's yours? → doomscroll.stats";
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(cap).then(()=>toast("Caption copied — go post it 😈")).catch(()=>toast("Couldn't copy"));
+  else toast("Clipboard unavailable");}
+function downloadCard(){const a=document.createElement("a");a.download="my-doomscroll.png";a.href=$("#sharecanvas").toDataURL("image/png");a.click();toast("Saved your card 📸");}
+window.copyCaption=copyCaption;window.downloadCard=downloadCard;
+$("#modal").addEventListener("click",e=>{if(e.target===$("#modal"))closeShare();});
+
+/* pre-render a sample so dashboard isn't empty if opened directly */
+analyse(PERSONAS.doom.posts,PERSONAS.doom.title);
+})();
+</script>
+
+</body>
+</html>
