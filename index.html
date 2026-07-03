@@ -343,7 +343,7 @@ var GA_ID = "";
       <div class="steps" id="steps"></div>
     </div>
     <div class="nav-row">
-      <button class="btn ghost" onclick="go('login')" style="width:auto">← Back</button>
+      <button class="btn ghost" onclick="goBack()" style="width:auto">← Back</button>
       <button class="btn primary" id="rec-next" onclick="go('upload')" style="width:auto">I've got my screenshots →</button>
     </div>
   </section>
@@ -498,7 +498,7 @@ var GA_ID = "";
       <a class="ab-link" href="https://binminder.co.uk" target="_blank" rel="noopener">🗑️ BinMinder <span>— never miss bin day</span></a>
     </div>
     <a class="ab-link" href="#" onclick="go('method');return false">📐 How it works <span>— methodology &amp; honest limitations</span></a>
-    <button class="btn ghost" onclick="go('login')" style="width:auto;margin-top:26px;">← Back to the tool</button>
+    <button class="btn ghost" onclick="goBack()" style="width:auto;margin-top:26px;">← Back</button>
   </div>
 </section>
 
@@ -514,7 +514,7 @@ var GA_ID = "";
     <p class="ab-p">Classifying short posts and images is inherently uncertain. Account lean is solid for well-known accounts and a <b>rough guess</b> for small ones. The "% bot" figure and news-outlet positions are estimates, not facts. Treat every score as a <b>conversation starter, not a verdict</b>.</p>
     <h2 style="font-size:17px;margin:26px 0 8px;">Privacy</h2>
     <p class="ab-p">No account, no tracking cookies. Text feeds never leave your device. Image feeds are read once and discarded — <b>nothing about you is stored</b>. The code is open source.</p>
-    <button class="btn ghost" onclick="go('login')" style="width:auto;margin-top:26px;">← Back to the tool</button>
+    <button class="btn ghost" onclick="goBack()" style="width:auto;margin-top:26px;">← Back</button>
   </div>
 </section>
 
@@ -586,9 +586,12 @@ function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");setT
 
 /* ---------- navigation ---------- */
 const STEPS=["record","upload","dash"];
-function go(v){
+let CURVIEW="login";
+function render(v){
+  if(!$("#view-"+v))v="login";
   $$(".view").forEach(x=>x.classList.remove("on"));
   $("#view-"+v).classList.add("on");
+  CURVIEW=v;
   const sp=$("#stepper"); sp.style.display = (v==="login"||v==="about"||v==="method")?"none":"flex";
   const idx=STEPS.indexOf(v);
   $$("#stepper .st").forEach((st,i)=>{st.classList.toggle("on",i===idx);st.classList.toggle("done",i<idx);});
@@ -604,7 +607,17 @@ function go(v){
   }
   window.scrollTo({top:0,behavior:"smooth"});
 }
+function go(v){
+  if(!$("#view-"+v))v="login";
+  if(v===CURVIEW){render(v);return;}                 // don't stack a dead history entry for the same view
+  render(v);
+  try{history.pushState({v:v},"","#"+v);}catch(e){}  // so the browser / phone Back button walks back through views
+}
 window.go=go;
+function goBack(){ if(history.state&&history.state.v){history.back();} else {go("login");} }
+window.goBack=goBack;
+window.addEventListener("popstate",function(e){ render(e.state&&e.state.v?e.state.v:"login"); });
+try{ if(!history.state)history.replaceState({v:"login"},"",location.pathname+location.search); }catch(e){}
 
 /* no login — the tool never authenticates; the landing CTA goes straight to capture */
 
@@ -1187,6 +1200,7 @@ $("#modal").addEventListener("click",e=>{if(e.target===$("#modal"))closeShare();
 analyse(PERSONAS.doom.posts,PERSONAS.doom.title);
 })();
 </script>
+
 
 
 
