@@ -1,4 +1,4 @@
-# 🌀 doomscroll.stats
+# 🌀 doomscrollstats.com
 
 **See the algorithm that's feeding you.** A free, open tool that reads your social feed and shows you its *shape* — what it's reinforcing, and what it's quietly trying to make you **be**, **feel**, and **buy**.
 

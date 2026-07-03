@@ -3,21 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>doomscroll.stats — see the algorithm that's feeding you</title>
+<title>doomscrollstats.com — see the algorithm that's feeding you</title>
 <meta name="description" content="A free, private mirror for your social feed. See what the algorithm is quietly training you to be, feel and buy — on X, Instagram, TikTok, YouTube, Reddit, LinkedIn and Facebook. Non-partisan, on-device, open-source.">
 <link rel="canonical" href="https://doomscrollstats.com/">
 <meta name="theme-color" content="#070913">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="doomscroll.stats">
+<meta property="og:site_name" content="doomscrollstats.com">
 <meta property="og:url" content="https://doomscrollstats.com/">
-<meta property="og:title" content="doomscroll.stats — see the algorithm that's feeding you">
+<meta property="og:title" content="doomscrollstats.com — see the algorithm that's feeding you">
 <meta property="og:description" content="A free, private mirror for your social feed — what it's quietly training you to be, feel and buy. Non-partisan, on-device, open-source.">
 <meta property="og:image" content="https://doomscrollstats.com/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="doomscroll.stats — see the algorithm that's feeding you">
+<meta property="og:image:alt" content="doomscrollstats.com — see the algorithm that's feeding you">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="doomscroll.stats — see the algorithm that's feeding you">
+<meta name="twitter:title" content="doomscrollstats.com — see the algorithm that's feeding you">
 <meta name="twitter:description" content="A free, private mirror for your social feed — what it's quietly training you to be, feel and buy.">
 <meta name="twitter:image" content="https://doomscrollstats.com/og.png">
 <script>
@@ -298,7 +298,7 @@ var GA_ID = "";
 
 <header class="top">
   <div class="top-in">
-    <div class="mark" onclick="go('login')"><span class="spin">🌀</span>doom<b>scroll</b><span class="tld">.stats</span></div>
+    <div class="mark" onclick="go('login')"><span class="spin">🌀</span>doomscroll<b>stats</b><span class="tld">.com</span></div>
     <div class="right">
       <button class="lnk" onclick="go('about')">About</button>
       <a class="lnk" href="https://www.buymeacoffee.com/jhammant" target="_blank" rel="noopener" style="text-decoration:none" title="Buy me a coffee">☕</a>
@@ -433,7 +433,7 @@ var GA_ID = "";
         <div class="card-b" id="suggestions"></div>
       </div>
       <div class="card" id="agg-card" style="display:none">
-        <div class="card-h"><div class="k">Compared to everyone</div><div class="t">How bubbled you are vs. all doomscroll.stats users</div></div>
+        <div class="card-h"><div class="k">Compared to everyone</div><div class="t">How bubbled you are vs. all doomscrollstats.com users</div></div>
         <div class="card-b" id="agg"></div>
       </div>
       <div class="card" id="history-card" style="display:none">
@@ -504,8 +504,8 @@ var GA_ID = "";
 
 <section class="view" id="view-about">
   <div class="wrap" style="max-width:680px;padding-top:44px;padding-bottom:40px;">
-    <h1 style="font-family:var(--serif);font-weight:400;font-size:30px;margin:0 0 16px;letter-spacing:-.01em;">About doomscroll.stats</h1>
-    <p class="ab-p">Your feed has a shape you can't see from the inside. doomscroll.stats holds up a mirror: it reads the posts an algorithm serves you and shows what it's reinforcing — what it's quietly trying to make you <em>be</em>, <em>feel</em>, and <em>buy</em>.</p>
+    <h1 style="font-family:var(--serif);font-weight:400;font-size:30px;margin:0 0 16px;letter-spacing:-.01em;">About doomscrollstats.com</h1>
+    <p class="ab-p">Your feed has a shape you can't see from the inside. doomscrollstats.com holds up a mirror: it reads the posts an algorithm serves you and shows what it's reinforcing — what it's quietly trying to make you <em>be</em>, <em>feel</em>, and <em>buy</em>.</p>
     <p class="ab-p">It's <b>free</b>, a <b>mirror not an alarm</b>, and <b>non-partisan by design</b> — a hard-left and a hard-right bubble score the same. Your screenshots are read on your device (or, for the sharper read, by a cheap model on the server); <b>nothing about you is stored</b>.</p>
     <p class="ab-p">Built because algorithms quietly shape what millions of us think, and almost no one gets to watch it happen. Now works on X, Instagram, TikTok and YouTube.</p>
     <div class="ab-links">
@@ -536,7 +536,7 @@ var GA_ID = "";
 </section>
 
 <footer>
-  <b>doomscroll.stats</b> is a free, open tool. Text feeds (X, YouTube) are read <b>on your device</b>; image feeds (Instagram, TikTok) are read by a model on the server and discarded immediately — <b>nothing about you is ever stored</b>.
+  <b>doomscrollstats.com</b> is a free, open tool. Text feeds (X, YouTube) are read <b>on your device</b>; image feeds (Instagram, TikTok) are read by a model on the server and discarded immediately — <b>nothing about you is ever stored</b>.
   Outlet positions are approximate, from public media-bias ratings, and used only to show <em>relative</em> distance.
   It measures extremity <b>symmetrically</b> — a hard-left bubble and a hard-right bubble score the same. This is a mirror, not a verdict:
   political classification of short text is uncertain, so treat every score as a conversation starter. Sample feeds are fictional.
@@ -1113,7 +1113,7 @@ async function pingAgg(score){
     if(d&&typeof d.moreBubbledThan==="number"&&d.samples>=8){
       $("#agg-card").style.display="";
       $("#agg").innerHTML='<div class="read-highlight">You\'re more bubbled than <b>'+d.moreBubbledThan+'%</b> of feeds.</div>'+
-        '<div class="how" style="border:none;padding-top:0">Across '+d.samples.toLocaleString()+' feeds analysed on doomscroll.stats. Lower balance = more bubbled. Only the number is stored — never your feed.</div>';
+        '<div class="how" style="border:none;padding-top:0">Across '+d.samples.toLocaleString()+' feeds analysed on doomscrollstats.com. Lower balance = more bubbled. Only the number is stored — never your feed.</div>';
     }
   }catch(e){}
 }
@@ -1132,7 +1132,7 @@ function exportData(){
   if(!LASTPOSTS.length){toast("Analyse a feed first");return;}
   const R=REPORT||{};
   const d={
-    tool:"doomscroll.stats", platform:PLATFORM, scoredBy:SCOREDBY, engine:R.engine||null,
+    tool:"doomscrollstats.com", platform:PLATFORM, scoredBy:SCOREDBY, engine:R.engine||null,
     count:LASTPOSTS.length,
     stats:{meanLean:+(LASTSTATS.meanLean||0).toFixed(3),meanHeat:+(LASTSTATS.meanHeat||0).toFixed(3),spread:+(LASTSTATS.spread||0).toFixed(3),balanceScore:LASTSTATS.score},
     archetype:ARCH.n, character:EXTRA.char,
@@ -1237,12 +1237,12 @@ function drawCard(){const c=$("#sharecanvas");c.width=1080;c.height=1080;
     x.fillStyle="#aeb8d4";x.fillText(lbl,W/2,py+20);try{x.letterSpacing="0px";}catch(e){}}
   const fy=560,mkS=26,gap=11;                        // footer lockup: rainbow squircle + wordmark, centered
   x.font="900 22px Inter,ui-sans-serif,system-ui,sans-serif";
-  const wWord=x.measureText("doomscroll").width,wTld=x.measureText(".stats").width,startX=(W-(mkS+gap+wWord+wTld))/2,mkY=fy-20;
+  const wWord=x.measureText("doomscrollstats").width,wTld=x.measureText(".com").width,startX=(W-(mkS+gap+wWord+wTld))/2,mkY=fy-20;
   x.save();x.shadowColor="rgba(124,92,255,.5)";x.shadowBlur=16;_rr(x,startX,mkY,mkS,mkS,8);x.fillStyle=_rainbow(x,startX,startX+mkS);x.fill();x.restore();
   x.font="900 15px Inter,ui-sans-serif,system-ui,sans-serif";x.fillStyle="#0a0d18";x.fillText("d",startX+mkS/2,mkY+mkS-7);
   x.textAlign="left";x.font="900 22px Inter,ui-sans-serif,system-ui,sans-serif";
-  const wx=startX+mkS+gap;x.fillStyle=_rainbow(x,wx,wx+wWord);x.fillText("doomscroll",wx,fy);
-  x.fillStyle="#5b6478";x.fillText(".stats",wx+wWord,fy);
+  const wx=startX+mkS+gap;x.fillStyle=_rainbow(x,wx,wx+wWord);x.fillText("doomscrollstats",wx,fy);
+  x.fillStyle="#5b6478";x.fillText(".com",wx+wWord,fy);
   x.textAlign="center";x.font="13px ui-sans-serif,system-ui,sans-serif";x.fillStyle="#6b7488";
   x.fillText("what's yours? → doomscrollstats.com",W/2,588);
 }
@@ -1259,6 +1259,7 @@ $("#modal").addEventListener("click",e=>{if(e.target===$("#modal"))closeShare();
 analyse(PERSONAS.doom.posts,PERSONAS.doom.title);
 })();
 </script>
+
 
 
 

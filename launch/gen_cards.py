@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the doomscroll.stats LinkedIn launch carousel (4x 1080x1350, devprint style)."""
+"""Generate the doomscrollstats.com LinkedIn launch carousel (4x 1080x1350, devprint style)."""
 import subprocess, os
 W,H=1080,1350
 OUT="/Users/jhammant/dev/doomscrollstats/launch"
@@ -30,7 +30,7 @@ def header(mood="#7c5cff"):
   <g transform="translate(72,74)">
     <rect width="64" height="64" rx="17" fill="url(#rain)"/>
     <text x="32" y="47" font-family="sans-serif" font-size="37" font-weight="900" fill="#0a0d18" text-anchor="middle">d</text>
-    <text x="82" y="44" font-family="sans-serif" font-size="33" font-weight="900" fill="#eef3ff">doomscroll<tspan fill="#5b6478">.stats</tspan></text>
+    <text x="82" y="44" font-family="sans-serif" font-size="33" font-weight="900" fill="#eef3ff">doomscrollstats<tspan fill="#5b6478">.com</tspan></text>
   </g>'''
 
 def footer(tag="free · private · on-device · open-source"):
