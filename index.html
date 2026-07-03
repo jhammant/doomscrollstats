@@ -235,7 +235,8 @@ var GA_ID = "";
   .sug .s .g{font-size:12px;color:var(--muted);}
   .sug .s .d{font-size:13.5px;color:var(--ink);margin-top:3px;font-weight:600;}
   .hist{display:flex;flex-direction:column;gap:8px;}
-  .hist .row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;font-size:12.5px;}
+  .hist .row{display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center;font-size:12.5px;}
+  .hist .dl{font-size:11px;font-weight:800;font-variant-numeric:tabular-nums;justify-self:end;min-width:26px;text-align:right;}
   .hist .row .d{color:var(--muted);font-variant-numeric:tabular-nums;}
   .engine-row{display:flex;gap:9px;justify-content:center;margin:16px auto 0;flex-wrap:wrap;align-items:center;}
   .engine-row .lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;}
@@ -655,11 +656,14 @@ $$("#methods [data-method]").forEach(b=>b.addEventListener("click",()=>{
   $$("#methods [data-method]").forEach(x=>x.setAttribute("aria-pressed","false"));
   b.setAttribute("aria-pressed","true");METHOD=b.dataset.method;renderSteps();
 }));
+const VIDEO_FIRST=new Set(["tiktok"]);   // single full-screen video feed — recording while you swipe captures many clips; screenshots read best everywhere else (OCR + vision)
 $$('.platforms .plat[data-plat]').forEach(b=>b.addEventListener("click",()=>{
   $$('.platforms .plat[data-plat]').forEach(x=>x.setAttribute("aria-pressed","false"));
   b.setAttribute("aria-pressed","true");PLATFORM=b.dataset.plat;
-  if(VISUAL.has(PLATFORM)){const sm=$('#methods [data-method="shots"]');if(sm)sm.click();}
-  renderSteps();
+  const want=VIDEO_FIRST.has(PLATFORM)?"record":"shots";
+  const mb=$('#methods [data-method="'+want+'"]');
+  if(mb&&mb.getAttribute("aria-pressed")!=="true"){mb.click();}   // click() re-renders steps
+  else renderSteps();
 }));
 $$("#dev-tabs .dev-tab").forEach(b=>b.addEventListener("click",()=>{
   $$("#dev-tabs .dev-tab").forEach(x=>x.setAttribute("aria-pressed","false"));
@@ -893,8 +897,8 @@ function renderArch(posts,st){
   else if(st.score>=72&&st.meanHeat<.4)a={e:"🧘",n:"The Zen Centrist",v:"#28c76f",t:"Cool as a cucumber — and it actually lets the other side in. Your feed forgot to make you angry today. Rare."};
   else if(Math.abs(st.meanLean)>=.22)a={e:"🧭",n:left?"Drifting Left":"Drifting Right",v:left?"#3987e5":"#e66767",t:"Still a bit of everything — but the walls are quietly inching "+(left?"left":"right")+"."};
   else a={e:"🥗",n:"The Balanced Diet",v:"#28c76f",t:"A genuine spread of views and moods. Whatever you're doing, keep doing it."};
-  const bubble=clamp(Math.round(95-st.score*.9),3,97);
-  const pct=st.score>=66?"Calmer than "+(100-bubble)+"% of feeds 🌤️":"More bubbled than "+bubble+"% of feeds 🫧";
+  // Describe THIS feed honestly from its own balance score — the real "vs other feeds" comparison lives only in the aggregate card, so we never show a made-up percentile here.
+  const pct=st.score>=72?"Well balanced 🌤️":st.score>=55?"Fairly balanced 🍃":st.score>=38?"Somewhat bubbled 🫧":"Heavily bubbled 🫧";
   const arch=$("#arch");arch.style.setProperty("--vibe",a.v+"2b");arch.style.setProperty("--vibe-solid",a.v+"aa");
   $("#a-emoji").textContent=a.e;$("#a-name").textContent=a.n;$("#a-name").style.color=a.v;$("#a-tag").textContent=a.t;$("#a-pct").textContent=pct;
   ARCH={n:a.n,e:a.e,tag:a.t,pct,vibe:a.v};
@@ -1048,9 +1052,9 @@ function renderAccounts(accts){
   $("#accounts").innerHTML=accts.slice(0,6).map(a=>{const l=c1(a.lean),lc=leanColor(l),lt=l<=-.55?"Far left":l<=-.2?"Left":l<.2?"Neutral":l<.55?"Right":"Far right";
     return '<div class="acct"><div class="h">'+(a.handle||"@?")+'</div>'+
       '<span class="lean" style="background:'+lc+'22;color:'+lc+';border:1px solid '+lc+'66">'+lt+'</span>'+
-      '<span class="share">'+(a.share!=null?Math.round(c01(a.share)*100)+"%":"")+'</span>'+
+      '<span class="share">'+(a.share!=null?Math.round(c01(a.share)*100)+"% of feed":"")+'</span>'+
       '<div class="n">'+(a.note||"")+'</div></div>';}).join('')+
-      '<div class="acct-note">Lean is estimated from the posts we saw plus what the model knows about each account — solid for well-known accounts, a rough guess for smaller ones. Indicative, not a verdict.</div>';
+      '<div class="acct-note"><b>Left/Right</b> is the account\'s estimated political lean — from the posts we saw plus what the model knows about it (solid for well-known accounts, a rough guess for smaller ones). The <b>%</b> is how much of the feed we read came from that account. Indicative, not a verdict.</div>';
 }
 function renderSuggestions(sugs){
   const card=$("#sugg-card");
@@ -1071,8 +1075,20 @@ function renderHistory(){
   const tt=card.querySelector(".t"); if(tt)tt.textContent="How your "+pn+" feed has shifted across your visits";
   const fmt=t=>{try{return new Date(t).toLocaleDateString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});}catch(e){return"";}};
   const sc=e=>e.score>=70?"var(--good)":e.score>=50?"var(--warn)":e.score>=32?"var(--serious)":"var(--crit)";
-  $("#history").innerHTML='<div class="hist">'+h.slice(-8).reverse().map(e=>'<div class="row"><span class="d">'+fmt(e.t)+'</span><span>'+(e.arch||"")+' · '+(e.topic||"")+'</span><span style="color:'+sc(e)+';font-weight:800">'+e.score+'</span></div>').join('')+
-    '</div><div class="how" style="border:none;padding-top:8px">Your <b>'+pn+'</b> feed across visits. Come back after a few days\' scrolling to see if its balance and heat are trending up or down.</div>';
+  const last=h.slice(-8);
+  const rows=last.map((e,i)=>{
+    const prev=i>0?last[i-1]:null, d=prev?e.score-prev.score:null;
+    const dl=d==null?'<span class="dl" style="color:var(--muted)">—</span>'
+      :'<span class="dl" style="color:'+(d>0?'var(--good)':d<0?'var(--crit)':'var(--muted)')+'">'+(d>0?'▲':d<0?'▼':'·')+(d?Math.abs(d):'')+'</span>';
+    return '<div class="row"><span class="d">'+fmt(e.t)+'</span><span>'+(e.arch||"")+' · '+(e.topic||"")+'</span>'+dl+'<span style="color:'+sc(e)+';font-weight:800">'+e.score+'</span></div>';
+  }).reverse();
+  const first=h[0], now=h[h.length-1], trend=now.score-first.score, ld=(now.lean||0)-(first.lean||0);
+  const trendTxt = Math.abs(trend)<3
+    ? "Your <b>"+pn+"</b> balance has held about steady across "+h.length+" checks."
+    : (trend>0?"📈 Balance <b>up "+trend+"</b> — a little less bubbled":"📉 Balance <b>down "+Math.abs(trend)+"</b> — a little more bubbled")+" since your first check.";
+  const leanTxt = Math.abs(ld)<0.12?"" : " Your feed has drifted "+(ld>0?"right":"left")+" over that time.";
+  $("#history").innerHTML='<div class="hist">'+rows.join('')+
+    '</div><div class="how" style="border:none;padding-top:8px">'+trendTxt+leanTxt+' <span style="color:var(--good)">▲</span>/<span style="color:var(--crit)">▼</span> = change from your previous check. Kept on your device only.</div>';
 }
 async function pingAgg(score){
   try{
@@ -1200,6 +1216,7 @@ $("#modal").addEventListener("click",e=>{if(e.target===$("#modal"))closeShare();
 analyse(PERSONAS.doom.posts,PERSONAS.doom.title);
 })();
 </script>
+
 
 
 
