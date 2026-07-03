@@ -656,7 +656,7 @@ $$("#methods [data-method]").forEach(b=>b.addEventListener("click",()=>{
   $$("#methods [data-method]").forEach(x=>x.setAttribute("aria-pressed","false"));
   b.setAttribute("aria-pressed","true");METHOD=b.dataset.method;renderSteps();
 }));
-const VIDEO_FIRST=new Set(["tiktok"]);   // single full-screen video feed — recording while you swipe captures many clips; screenshots read best everywhere else (OCR + vision)
+const VIDEO_FIRST=new Set(["tiktok","instagram"]);   // video-native feeds — recording while you swipe captures many clips; screenshots read best on the text/OCR platforms
 $$('.platforms .plat[data-plat]').forEach(b=>b.addEventListener("click",()=>{
   $$('.platforms .plat[data-plat]').forEach(x=>x.setAttribute("aria-pressed","false"));
   b.setAttribute("aria-pressed","true");PLATFORM=b.dataset.plat;
@@ -1185,27 +1185,54 @@ function classifyPaste(raw){return raw.split(/\n+/).map(s=>s.trim()).filter(s=>s
 function openShare(){drawCard();$("#modal").classList.add("on");}
 function closeShare(){$("#modal").classList.remove("on");}
 window.openShare=openShare;window.closeShare=closeShare;
-function drawCard(){const c=$("#sharecanvas"),x=c.getContext("2d"),W=600,H=600;
-  const g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,ARCH.vibe+"33");g.addColorStop(.55,"#15181c");g.addColorStop(1,"#0c0e11");
-  x.fillStyle="#0c0e11";x.fillRect(0,0,W,H);x.fillStyle=g;x.fillRect(0,0,W,H);
+/* share card — styled after the devprint design language (deep navy + purple/cyan glows,
+   4-stop rainbow gradient accents, rounded rainbow mark, orbit motif, mono eyebrows). */
+function _rr(x,X,Y,W,H,R){x.beginPath();x.moveTo(X+R,Y);x.arcTo(X+W,Y,X+W,Y+H,R);x.arcTo(X+W,Y+H,X,Y+H,R);x.arcTo(X,Y+H,X,Y,R);x.arcTo(X,Y,X+W,Y,R);x.closePath();}
+function _rgba(hex,a){const n=parseInt((hex||"#7c5cff").slice(1),16);return "rgba("+((n>>16)&255)+","+((n>>8)&255)+","+(n&255)+","+a+")";}
+function _glow(x,cx,cy,r,col,a){const g=x.createRadialGradient(cx,cy,0,cx,cy,r);g.addColorStop(0,_rgba(col,a));g.addColorStop(1,_rgba(col,0));x.fillStyle=g;x.fillRect(0,0,600,600);}
+function _rainbow(x,x0,x1,y){const g=x.createLinearGradient(x0,y||0,x1,y||0);g.addColorStop(0,"#31d9ff");g.addColorStop(.34,"#7c5cff");g.addColorStop(.68,"#ff5cc8");g.addColorStop(1,"#ffd166");return g;}
+function _orbit(x,cx,cy){x.save();x.lineWidth=1;
+  x.strokeStyle="rgba(255,255,255,.10)";x.beginPath();x.arc(cx,cy,58,0,7);x.stroke();
+  x.strokeStyle="rgba(255,255,255,.055)";x.beginPath();x.arc(cx,cy,94,0,7);x.stroke();
+  [["#62f0a7",58,-0.5,4],["#ff5cc8",94,2.15,5],["#ffd166",58,3.5,3]].forEach(function(s){x.globalAlpha=.65;x.fillStyle=s[0];x.beginPath();x.arc(cx+Math.cos(s[2])*s[1],cy+Math.sin(s[2])*s[1],s[3],0,7);x.fill();});
+  x.restore();}
+function drawCard(){const c=$("#sharecanvas");c.width=1080;c.height=1080;
+  const x=c.getContext("2d"),W=600,H=600;x.scale(1080/600,1080/600);
+  x.fillStyle="#070913";x.fillRect(0,0,W,H);
+  _glow(x,92,80,360,"#7c5cff",.34);                 // devprint purple, top-left
+  _glow(x,510,110,320,"#31d9ff",.20);               // devprint cyan, top-right
+  _glow(x,300,565,300,ARCH.vibe||"#7c5cff",.22);    // a whisper of the result's own mood colour
+  const vg=x.createLinearGradient(0,380,0,600);vg.addColorStop(0,"rgba(7,9,19,0)");vg.addColorStop(1,"rgba(7,9,19,.72)");x.fillStyle=vg;x.fillRect(0,380,W,220);
+  _orbit(x,514,88);
   x.textAlign="center";
   const plat=(PLAT_INFO[PLATFORM]&&PLAT_INFO[PLATFORM].name)||"";
-  x.font="700 15px ui-sans-serif,system-ui,sans-serif";x.fillStyle="#a6abb4";x.fillText(("MY "+plat+" FEED IS…").toUpperCase(),W/2,78);
-  x.font="72px sans-serif";x.fillText(ARCH.e,W/2,172);
+  x.font="800 14px ui-monospace,'JetBrains Mono',monospace";x.fillStyle="#9aa7c7";try{x.letterSpacing="4px";}catch(e){}
+  x.fillText(("MY "+plat+" FEED IS").toUpperCase(),W/2,72);try{x.letterSpacing="0px";}catch(e){}
+  x.font="64px sans-serif";x.fillText(ARCH.e,W/2,158);
   const hl=(REPORT&&REPORT.highlight)?REPORT.highlight:ARCH.tag;   // the highlight is the star
-  x.font="italic 27px Georgia,serif";x.fillStyle="#37d6c4";
-  const yEnd=wrap(x,"“"+hl+"”",W/2,232,520,34);
-  x.font="700 17px ui-sans-serif,system-ui,sans-serif";x.fillStyle="#c3c8ce";
-  x.fillText(ARCH.e+" "+ARCH.n+"  ·  "+EXTRA.topic,W/2,Math.min(yEnd+40,472));
-  x.font="700 16px ui-sans-serif,system-ui,sans-serif";x.fillStyle="#a6abb4";
-  x.fillText(ARCH.pct.replace(/[🌤️🫧]/g,"").trim(),W/2,506);
-  x.font="800 21px ui-sans-serif,system-ui,sans-serif";x.fillStyle="#f3f5f7";x.fillText("doomscroll",W/2-36,554);
-  x.fillStyle="#697079";x.fillText(".stats",W/2+54,554);
-  x.font="14px ui-sans-serif,system-ui,sans-serif";x.fillStyle="#697079";x.fillText("what's yours?",W/2,580);
+  x.font="italic 900 29px Georgia,'Fraunces',serif";x.fillStyle=_rainbow(x,64,536);
+  const yEnd=wrap(x,"“"+hl+"”",W/2,220,500,37);
+  x.font="700 17px Inter,ui-sans-serif,system-ui,sans-serif";x.fillStyle="#c7d0e6";
+  const nameY=Math.min(yEnd+42,466);x.fillText(ARCH.n+"  ·  "+EXTRA.topic,W/2,nameY);
+  const lbl=(ARCH.pct||"").replace(/[^\x20-\x7E]/g,"").trim().toUpperCase();
+  if(lbl){x.font="800 13px ui-monospace,'JetBrains Mono',monospace";try{x.letterSpacing="2px";}catch(e){}
+    const pw=x.measureText(lbl).width+36,py=Math.min(nameY+20,494);
+    _rr(x,W/2-pw/2,py,pw,30,15);x.fillStyle="rgba(255,255,255,.05)";x.fill();x.lineWidth=1;x.strokeStyle="rgba(255,255,255,.14)";x.stroke();
+    x.fillStyle="#aeb8d4";x.fillText(lbl,W/2,py+20);try{x.letterSpacing="0px";}catch(e){}}
+  const fy=560,mkS=26,gap=11;                        // footer lockup: rainbow squircle + wordmark, centered
+  x.font="900 22px Inter,ui-sans-serif,system-ui,sans-serif";
+  const wWord=x.measureText("doomscroll").width,wTld=x.measureText(".stats").width,startX=(W-(mkS+gap+wWord+wTld))/2,mkY=fy-20;
+  x.save();x.shadowColor="rgba(124,92,255,.5)";x.shadowBlur=16;_rr(x,startX,mkY,mkS,mkS,8);x.fillStyle=_rainbow(x,startX,startX+mkS);x.fill();x.restore();
+  x.font="900 15px Inter,ui-sans-serif,system-ui,sans-serif";x.fillStyle="#0a0d18";x.fillText("d",startX+mkS/2,mkY+mkS-7);
+  x.textAlign="left";x.font="900 22px Inter,ui-sans-serif,system-ui,sans-serif";
+  const wx=startX+mkS+gap;x.fillStyle=_rainbow(x,wx,wx+wWord);x.fillText("doomscroll",wx,fy);
+  x.fillStyle="#5b6478";x.fillText(".stats",wx+wWord,fy);
+  x.textAlign="center";x.font="13px ui-sans-serif,system-ui,sans-serif";x.fillStyle="#6b7488";
+  x.fillText("what's yours? → doomscrollstats.com",W/2,588);
 }
 function wrap(x,text,cx,y,maxw,lh){const words=text.split(" ");let line="",yy=y;
   for(const w of words){const test=line+w+" ";if(x.measureText(test).width>maxw&&line){x.fillText(line.trim(),cx,yy);line=w+" ";yy+=lh;}else line=test;}x.fillText(line.trim(),cx,yy);return yy;}
-function copyCaption(){const hl=(REPORT&&REPORT.highlight)?REPORT.highlight:ARCH.n;const cap=ARCH.e+" My feed is: "+hl+" — "+ARCH.pct.replace(/[🌤️🫧]/g,"").trim()+". What's yours? → doomscroll.stats";
+function copyCaption(){const hl=(REPORT&&REPORT.highlight)?REPORT.highlight:ARCH.n;const cap=ARCH.e+" My feed is: "+hl+" — "+(ARCH.pct||"").replace(/[^\x20-\x7E]/g,"").trim()+". What's yours? → doomscrollstats.com";
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(cap).then(()=>toast("Caption copied — go post it 😈")).catch(()=>toast("Couldn't copy"));
   else toast("Clipboard unavailable");}
 function downloadCard(){const a=document.createElement("a");a.download="my-doomscroll.png";a.href=$("#sharecanvas").toDataURL("image/png");a.click();toast("Saved your card 📸");}
@@ -1216,6 +1243,7 @@ $("#modal").addEventListener("click",e=>{if(e.target===$("#modal"))closeShare();
 analyse(PERSONAS.doom.posts,PERSONAS.doom.title);
 })();
 </script>
+
 
 
 
