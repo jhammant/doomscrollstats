@@ -998,6 +998,7 @@ async function deepEnrich(posts){
 }
 /* ---------- engine (local vs remote Nova) + the narrative report ---------- */
 const API_URL="https://r2i1aw70ki.execute-api.us-east-1.amazonaws.com";
+try{fetch(API_URL,{method:"POST",body:JSON.stringify({pv:1}),keepalive:true});}catch(e){}  // anonymous page-view beacon → live usage log; no cookies, nothing stored
 let ENGINE="local", REPORT=null;
 const VISUAL=new Set(["instagram","tiktok"]);
 function c1(v){v=+v;return isFinite(v)?Math.max(-1,Math.min(1,v)):0;}
@@ -1259,6 +1260,7 @@ $("#modal").addEventListener("click",e=>{if(e.target===$("#modal"))closeShare();
 analyse(PERSONAS.doom.posts,PERSONAS.doom.title);
 })();
 </script>
+
 
 
 

@@ -28,7 +28,9 @@ try:
         except Exception:
             continue
         u = d.get("u", "?")
-        if d.get("evt") == "analyze":
+        if d.get("evt") == "view":
+            print(f"👀 landed on the site                                        [{u}]")
+        elif d.get("evt") == "analyze":
             mode = "📸 vision" if d.get("mode") == "vision" else "📝 text  "
             plat = PLAT.get(d.get("plat"), str(d.get("plat", "?")))
             print(f"🔮 {plat:10} read  {mode}  ·  {d.get('posts', 0)} posts  ·  {d.get('ai', '?')}% AI-slop   [{u}]")

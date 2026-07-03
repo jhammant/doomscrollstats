@@ -112,13 +112,19 @@ def lambda_handler(event, context):
     if origin not in ALLOWED_ORIGINS:
         return _resp(403, {"error": "requests must come from doomscrollstats.com"})
     ip = ((event.get("requestContext") or {}).get("http") or {}).get("sourceIp", "")
-    if not _rate_ok(ip):
-        return _resp(429, {"error": "too many requests — please slow down"})
     try:
         body = event.get("body") or "{}"
         if event.get("isBase64Encoded"):
             body = base64.b64decode(body).decode("utf-8")
         data = json.loads(body)
+    except Exception:
+        data = {}
+    if data.get("pv"):                         # page-view beacon: cheapest path — log only, no rate limit, no DynamoDB
+        _log("view", u=_uh(ip))
+        return _resp(200, {"ok": True})
+    if not _rate_ok(ip):
+        return _resp(429, {"error": "too many requests — please slow down"})
+    try:
         if data.get("stat") is not None:
             return _stats(data.get("stat"), ip)
         platform = str(data.get("platform", "x")).lower()
