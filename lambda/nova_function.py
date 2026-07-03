@@ -2,7 +2,7 @@
 Text platforms (X, YouTube): OCR text -> Nova Micro.
 Visual platforms (Instagram, TikTok): screenshots/frames -> Nova Lite (vision).
 Returns scoring + a full narrative read. Bedrock via IAM (no key). boto3 ships in the runtime."""
-import json, re, base64, boto3
+import json, re, base64, time, boto3
 
 REGION = "us-east-1"
 MODEL_TEXT = "amazon.nova-micro-v1:0"
@@ -38,6 +38,22 @@ def _stats(score):
         return _resp(200, {"moreBubbledThan": more_bubbled, "samples": total})
     except Exception as e:
         return _resp(200, {"moreBubbledThan": None, "samples": 0, "error": str(e)[:120]})
+
+RL_LIMIT = 30  # backup bot protection: max requests per minute per IP
+def _rate_ok(ip):
+    if not ip:
+        return True
+    key = "rl#" + ip + "#" + str(int(time.time() // 60))
+    try:
+        r = _ddb.update_item(
+            TableName=AGG_TABLE, Key={"id": {"S": key}},
+            UpdateExpression="SET #t = :ttl ADD #c :one",
+            ExpressionAttributeNames={"#t": "ttl", "#c": "c"},
+            ExpressionAttributeValues={":ttl": {"N": str(int(time.time()) + 180)}, ":one": {"N": "1"}},
+            ReturnValues="UPDATED_NEW")
+        return int(r["Attributes"]["c"]["N"]) <= RL_LIMIT
+    except Exception:
+        return True  # fail open — never block real users on a DB hiccup
 
 PLATFORM_FRAME = {
     "x": "Platform: X/Twitter (text feed). Political lean is meaningful here — score it. Focus on lean, topic mix and outrage.",
@@ -82,6 +98,9 @@ def lambda_handler(event, context):
         return _resp(200, {"ok": True})
     if origin not in ALLOWED_ORIGINS:
         return _resp(403, {"error": "requests must come from doomscrollstats.com"})
+    ip = ((event.get("requestContext") or {}).get("http") or {}).get("sourceIp", "")
+    if not _rate_ok(ip):
+        return _resp(429, {"error": "too many requests — please slow down"})
     try:
         body = event.get("body") or "{}"
         if event.get("isBase64Encoded"):
