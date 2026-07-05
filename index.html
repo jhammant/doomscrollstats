@@ -85,6 +85,8 @@ var GA_ID = "";
     letter-spacing:-0.015em;text-wrap:balance;}
   .hero h1 em{font-style:italic;color:var(--accent);}
   .hero p{color:var(--ink-2);font-size:16px;margin:0 auto 26px;max-width:460px;}
+  .hero p.secret{background:rgba(224,72,74,.08);border:1px solid rgba(224,72,74,.28);border-radius:12px;
+    padding:13px 16px;color:var(--ink);font-size:14.5px;max-width:480px;margin:0 auto 24px;line-height:1.5;}
   .card{background:var(--surface);border:1px solid var(--hair);border-radius:16px;}
   .login-card{max-width:400px;margin:0 auto;padding:26px 24px;text-align:left;}
   .btn{font-family:var(--ui);font-weight:700;font-size:14.5px;border:none;border-radius:11px;cursor:pointer;
@@ -99,6 +101,11 @@ var GA_ID = "";
   .or{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12px;margin:16px 0;}
   .or::before,.or::after{content:"";flex:1;height:1px;background:var(--hair);}
   .fine{font-size:11.5px;color:var(--muted);text-align:center;margin-top:16px;line-height:1.5;}
+  details.why{max-width:480px;margin:14px auto 0;text-align:left;background:var(--surface);border:1px solid var(--hair);border-radius:11px;padding:0 14px;font-size:13.5px;}
+  details.why summary{cursor:pointer;padding:12px 0;font-weight:700;color:var(--ink-2);list-style:none;}
+  details.why summary::-webkit-details-marker{display:none;}
+  details.why[open] summary{color:var(--ink);}
+  details.why>div{color:var(--ink-2);line-height:1.55;padding:0 0 14px;}
   .trust{display:flex;gap:20px;justify-content:center;margin-top:30px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2);}
   .trust span{display:flex;align-items:center;gap:6px;}
   .trust b{color:var(--accent);}
@@ -318,10 +325,12 @@ var GA_ID = "";
     <div class="hero">
       <div class="eyebrow">You can't see it from the inside</div>
       <h1>See the algorithm that's <em>feeding you</em>.</h1>
-      <p>Record 30 seconds of your feed. We read it on your device, map it against real news outlets,
-        and show you the shape of what you're being served — and how far it's drifted from the middle.</p>
-      <div style="max-width:360px;margin:0 auto;">
+      <p>Capture a minute of your feed. We read it on your device and show you the shape of what you're
+        being served — what it's training you to <em>be, feel &amp; buy</em>, and how far it's drifted from the middle.</p>
+      <p class="secret">📵 The platforms know <b>exactly</b> what they funnel you — it's what keeps you scrolling. They just never show you. <b>This does.</b></p>
+      <div style="max-width:380px;margin:0 auto;">
         <button class="btn primary" onclick="go('record')">See what's feeding you →</button>
+        <button class="btn ghost" onclick="showExample()" style="width:100%;margin-top:10px">👀 Show me an example first</button>
         <div class="fine">No sign-up, no account, ever. Your feed is read on your device — nothing is uploaded.</div>
       </div>
       <div class="trust">
@@ -336,7 +345,8 @@ var GA_ID = "";
   <section class="view" id="view-record">
     <div class="page-h">
       <h2>Capture your feed</h2>
-      <p>Two easy ways: <b>screenshot</b> your <b>For You</b> feed a bunch of times, or <b>screen-record</b> it for ~30 seconds.</p>
+      <p>Two easy ways: <b>screenshot</b> your feed <b>15–20 times</b> as you scroll, or <b>screen-record</b> it for <b>a minute or so</b>. The more you capture, the sharper the read — a quick peek only shows a couple of directions.</p>
+      <details class="why"><summary>🤔 Why do I have to record it myself?</summary><div>Your feed is unique to <em>you</em> — there's no login, API or public page that reveals what the algorithm is serving you. The <b>only</b> way to see it is to capture what it actually put on your screen. It's read on your device and never uploaded. That's also exactly why the platforms are comfortable hiding it: it's invisible by default.</div></details>
     </div>
     <div class="platforms">
       <button class="plat" data-plat="x" aria-pressed="true"><span class="ic">𝕏</span>X / Twitter</button>
@@ -374,7 +384,7 @@ var GA_ID = "";
     <div class="drop" id="drop" onclick="document.getElementById('file').click()">
       <div class="ic">📸</div>
       <h3>Drop your screenshots (or a screen recording)</h3>
-      <p>Select them all at once — about 8 screenshots is plenty. Or tap to choose.</p>
+      <p>Select them all at once — <b>15+ is ideal</b> (more = sharper). Or tap to choose.</p>
       <span class="priv">🔒 nothing about you is stored</span>
       <input type="file" id="file" accept="video/*,image/*" multiple hidden>
     </div>
@@ -491,7 +501,7 @@ var GA_ID = "";
           <div class="vrow">
             <div class="vstat"><span class="vv" id="v-lean">—</span><br><span class="vk">Center of gravity</span></div>
             <div class="vstat"><span class="vv" id="v-spread">—</span><br><span class="vk">Viewpoint range</span></div>
-            <div class="vstat"><span class="vv" id="v-heat">—</span><br><span class="vk">Emotional heat</span></div>
+            <div class="vstat"><span class="vv" id="v-heat">—</span><br><span class="vk">Outrage / heat</span></div>
           </div>
         </div>
       </div></div>
@@ -633,6 +643,12 @@ function go(v){
 window.go=go;
 function goBack(){ if(history.state&&history.state.v){history.back();} else {go("login");} }
 window.goBack=goBack;
+function showExample(){                              // let people SEE a result before doing any work — the biggest driver of "get it"
+  try{ analyse(PERSONAS.doom.posts, "Example — an outrage-fuelled feed", null, true); go("dash");
+       toast("👆 This is an example. Capture your own feed to see yours."); }
+  catch(e){ go("record"); }
+}
+window.showExample=showExample;
 window.addEventListener("popstate",function(e){ render(e.state&&e.state.v?e.state.v:"login"); });
 try{ if(!history.state)history.replaceState({v:"login"},"",location.pathname+location.search); }catch(e){}
 
@@ -654,7 +670,7 @@ const DEV={
   android:["Open <b>{APP}</b> on your <b>{FEED}</b> feed.","Swipe down and tap <b>Screen record</b> → Start.","<b>Scroll for ~30 seconds</b>, then stop. Grab the clip next."],
   desktop:["Open <b>{URL}</b> on your <b>{FEED}</b> feed.","<b>Mac:</b> press <b>⇧⌘5</b>, click <b>Record Entire Screen</b>, then <b>Record</b>. <b>Windows:</b> press <b>⊞+Alt+R</b>.","<b>Scroll</b> for ~30 seconds.","<b>Mac:</b> click the <b>⏹ stop</b> button in the top menu bar — the clip saves to your <b>Desktop</b>. Then upload it next."]
 };
-const SHOTS=["Open <b>{APP}</b> on your <b>{FEED}</b> feed.","<b>Screenshot</b>, scroll a little, screenshot again — <b>about 8 times</b> down your feed.","Drop <b>all the screenshots</b> in at once. That's it."];
+const SHOTS=["Open <b>{APP}</b> on your <b>{FEED}</b> feed.","<b>Screenshot</b>, scroll a little, screenshot again — <b>15–20 times</b> down your feed. More = a sharper, less spiky read.","Drop <b>all the screenshots</b> in at once. That's it."];
 let METHOD="shots", DEVICE="ios";
 function renderSteps(){
   const p=PLAT_INFO[PLATFORM]||PLAT_INFO.x;
@@ -752,7 +768,7 @@ function videoFrames(file,n){return new Promise((res,rej)=>{const url=URL.create
 async function extractFromFiles(files){
   const canvases=[];
   for(const f of files)if(f.type.startsWith("image/")){setProc("preparing image…",8);canvases.push(await imgToCanvas(f));}
-  for(const f of files)if(f.type.startsWith("video/")){setProc("grabbing frames from your recording…",14);canvases.push(...await videoFrames(f,6));}
+  for(const f of files)if(f.type.startsWith("video/")){setProc("grabbing frames from your recording…",14);canvases.push(...await videoFrames(f,10));}
   setProc("loading the reader (first run downloads it once)…",20);
   const worker=await Tesseract.createWorker("eng");let text="";
   for(let i=0;i<canvases.length;i++){setProc("reading "+(i+1)+" / "+canvases.length+" on your device…",22+i/canvases.length*70);
@@ -925,7 +941,10 @@ function renderVerdict(st){
   const dir=st.meanLean<=-.45?"leans strongly left":st.meanLean<=-.18?"leans left":st.meanLean<.18?"sits near the center":st.meanLean<.45?"leans right":"leans strongly right";
   const heat=st.meanHeat>=.7?"and runs very hot":st.meanHeat>=.45?"and runs warm":"and stays fairly calm";
   const range=st.spread<.18?"You're rarely shown the other side.":st.spread<.32?"You see some range, but it's narrowing.":"You're shown a genuine spread of views.";
-  $("#verdict-head").innerHTML="Your feed <b style='color:"+leanColor(st.meanLean)+"'>"+dir+"</b> "+heat+". "+range;
+  const hot=st.meanHeat>=.6?" <b style='color:var(--crit)'>🔥 And it's tuned to keep you angry</b> — outrage is the fuel that keeps you scrolling.":st.meanHeat>=.42?" There's a steady drip of outrage running through it.":"";
+  const n=(typeof LASTPOSTS!=="undefined"&&LASTPOSTS.length)||0;
+  const thin=(n&&n<10)?" <span style='color:var(--muted)'>· we only read "+n+" posts — capture more (or record longer) for a sharper, less spiky read.</span>":"";
+  $("#verdict-head").innerHTML="Your feed <b style='color:"+leanColor(st.meanLean)+"'>"+dir+"</b> "+heat+". "+range+hot+thin;
   $("#v-lean").textContent=st.meanLean<-.05?Math.abs(st.meanLean).toFixed(2)+" left":st.meanLean>.05?st.meanLean.toFixed(2)+" right":"~centered";
   $("#v-lean").style.color=leanColor(st.meanLean);
   $("#v-spread").textContent=st.spread<.18?"Narrow":st.spread<.32?"Moderate":"Wide";
@@ -1028,8 +1047,8 @@ async function novaAnalyseImages(images){
 async function extractImages(files,onProg){
   const canvases=[];
   for(const f of files)if(f.type.startsWith("image/")){canvases.push(await imgToCanvas(f));if(onProg)onProg(canvases.length,files.length);}
-  for(const f of files)if(f.type.startsWith("video/"))canvases.push(...await videoFrames(f,10));
-  return canvases.slice(0,8).map(cv=>cv.toDataURL("image/jpeg",0.82).split(",")[1]);
+  for(const f of files)if(f.type.startsWith("video/"))canvases.push(...await videoFrames(f,12));
+  return canvases.slice(0,12).map(cv=>cv.toDataURL("image/jpeg",0.82).split(",")[1]);  // was 8 — use more of what people capture
 }
 function novaToPosts(d){return d.posts.map(p=>{const h=(p.author||"").trim();const q=P(h,h,String(p.text||"").slice(0,160),c1(p.lean),c01(p.heat),normTopic(p.topic),normEmo(p.emo));q.bot=c01(p.bot);return q;});}
 function novaReport(d){return {engine:"AI · Amazon Nova (LLM)",highlight:d.highlight||"",reinforcing:d.reinforcing||"",makesYou:d.makesYou||{},howInfluencing:d.howInfluencing||"",blindSpots:d.blindSpots||[],accounts:d.accounts||[],suggestions:d.suggestions||[],aiSlopPct:(typeof d.aiSlopPct==="number")?Math.round(d.aiSlopPct):null};}
@@ -1260,6 +1279,7 @@ $("#modal").addEventListener("click",e=>{if(e.target===$("#modal"))closeShare();
 analyse(PERSONAS.doom.posts,PERSONAS.doom.title);
 })();
 </script>
+
 
 
 

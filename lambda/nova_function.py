@@ -141,7 +141,7 @@ def lambda_handler(event, context):
                                 "and fill the schema. Even where there is little text, judge what the visuals are selling and reinforcing. "
                                 "Make 'highlight' vivid and specific to what you actually see. "
                                 "If an image is blank, a loading screen, or has no real feed content, ignore it — never invent posts."}]
-            for img in images[:8]:
+            for img in images[:12]:   # was 8 — use more of what people capture (we now nudge 15+ shots / longer video)
                 try:
                     raw = base64.b64decode(img.split(",")[-1])
                     content.append({"image": {"format": "jpeg", "source": {"bytes": raw}}})
