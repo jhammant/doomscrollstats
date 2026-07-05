@@ -2,7 +2,7 @@
 Text platforms (X, YouTube): OCR text -> Nova Micro.
 Visual platforms (Instagram, TikTok): screenshots/frames -> Nova Lite (vision).
 Returns scoring + a full narrative read. Bedrock via IAM (no key). boto3 ships in the runtime."""
-import json, re, base64, time, hashlib, boto3
+import json, re, base64, time, hashlib, secrets, boto3
 
 REGION = "us-east-1"
 MODEL_TEXT = "amazon.nova-micro-v1:0"
@@ -29,6 +29,46 @@ def _log(evt, **kw):
         print("USE " + json.dumps({"evt": evt, **kw}, separators=(",", ":")))
     except Exception:
         pass
+
+SHARE_TTL = 400 * 24 * 3600   # ~13 months, then auto-deleted by DynamoDB TTL
+
+def _save_share(snap):
+    """Opt-in: store a result snapshot under a short code so it can be shared by link. Returns the code."""
+    if not isinstance(snap, dict):
+        return _resp(400, {"error": "bad payload"})
+    try:
+        blob = json.dumps(snap, separators=(",", ":"))
+    except Exception:
+        return _resp(400, {"error": "unserializable payload"})
+    if len(blob) > 90000:
+        return _resp(413, {"error": "result too large to share"})
+    ttl = str(int(time.time()) + SHARE_TTL)
+    for attempt in range(3):
+        code = secrets.token_hex(3 + attempt)   # 6 hex chars, widening if it ever collides
+        try:
+            _ddb.put_item(TableName=AGG_TABLE,
+                          Item={"id": {"S": "sh#" + code}, "data": {"S": blob}, "ttl": {"N": ttl}},
+                          ConditionExpression="attribute_not_exists(id)")
+            _log("share_save", code=code, plat=snap.get("plat"))
+            return _resp(200, {"code": code})
+        except _ddb.exceptions.ConditionalCheckFailedException:
+            continue
+        except Exception as e:
+            return _resp(500, {"error": str(e)[:120]})
+    return _resp(500, {"error": "could not allocate a code"})
+
+def _load_share(code):
+    """Fetch a shared snapshot by its short code."""
+    code = re.sub(r"[^a-zA-Z0-9]", "", str(code))[:16]
+    if not code:
+        return _resp(400, {"error": "bad code"})
+    try:
+        item = _ddb.get_item(TableName=AGG_TABLE, Key={"id": {"S": "sh#" + code}}).get("Item")
+        if not item:
+            return _resp(404, {"error": "not found or expired"})
+        return _resp(200, {"snap": json.loads(item["data"]["S"])})
+    except Exception as e:
+        return _resp(500, {"error": str(e)[:120]})
 
 def _stats(score, ip=""):
     """Anonymous aggregate: bucket the balance score, return how bubbled vs everyone. Stores only a counter."""
@@ -125,6 +165,10 @@ def lambda_handler(event, context):
     if not _rate_ok(ip):
         return _resp(429, {"error": "too many requests — please slow down"})
     try:
+        if data.get("save") is not None:
+            return _save_share(data.get("save"))
+        if data.get("load") is not None:
+            return _load_share(data.get("load"))
         if data.get("stat") is not None:
             return _stats(data.get("stat"), ip)
         platform = str(data.get("platform", "x")).lower()
@@ -141,7 +185,7 @@ def lambda_handler(event, context):
                                 "and fill the schema. Even where there is little text, judge what the visuals are selling and reinforcing. "
                                 "Make 'highlight' vivid and specific to what you actually see. "
                                 "If an image is blank, a loading screen, or has no real feed content, ignore it — never invent posts."}]
-            for img in images[:12]:   # was 8 — use more of what people capture (we now nudge 15+ shots / longer video)
+            for img in images[:20]:   # up to 20 — matches the 15-20 shots we recommend; Nova Pro handles it fine
                 try:
                     raw = base64.b64decode(img.split(",")[-1])
                     content.append({"image": {"format": "jpeg", "source": {"bytes": raw}}})

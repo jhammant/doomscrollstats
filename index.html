@@ -194,6 +194,10 @@ var GA_ID = "";
   .arch-pct{font-size:12px;font-weight:700;padding:4px 11px;border-radius:999px;background:rgba(0,0,0,.32);
     border:1px solid var(--hair-2);display:inline-block;margin-top:9px;}
   .share-btn{white-space:nowrap;}
+  .sharelink-row{text-align:center;margin:2px 0 6px;}
+  .sharelink-row .link-note{font-size:11.5px;color:var(--muted);max-width:440px;margin:8px auto 0;line-height:1.5;}
+  #sharelink{display:flex;gap:8px;max-width:460px;margin:12px auto 0;align-items:center;}
+  #sharelink input{flex:1;background:var(--surface-2);color:var(--ink);border:1px solid var(--hair-2);border-radius:9px;padding:9px 11px;font:inherit;font-size:13px;min-width:0;}
   @media(max-width:620px){.share-btn{margin:0 auto;}}
   .radars{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
   @media(max-width:680px){.radars{grid-template-columns:1fr;}}
@@ -430,6 +434,15 @@ var GA_ID = "";
         </div>
       </div>
 
+      <div class="sharelink-row">
+        <button class="btn ghost" id="link-btn" onclick="createShareLink()" style="width:auto">🔗 Create a share link</button>
+        <div class="link-note">Opt-in: makes a short link others can open to see this exact read. Nothing is stored unless you tap it (auto-deletes after ~13 months).</div>
+        <div id="sharelink" style="display:none">
+          <input type="text" readonly onclick="this.select()" aria-label="Your share link">
+          <button class="btn primary" onclick="copyShareLink()" style="width:auto">Copy</button>
+        </div>
+      </div>
+
       <div class="card" id="report-card">
         <div class="card-h"><div class="k">The read</div><div class="t">What your algorithm is doing to you <span class="sub" id="report-engine"></span></div></div>
         <div class="card-b" id="report"></div>
@@ -613,6 +626,7 @@ function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");setT
 
 /* ---------- navigation ---------- */
 const STEPS=["record","upload","dash"];
+const SHARE_CODE=(location.hash.match(/[#&]c=([A-Za-z0-9]+)/)||[])[1]||"";  // captured before history rewrites the hash
 let CURVIEW="login";
 function render(v){
   if(!$("#view-"+v))v="login";
@@ -649,6 +663,40 @@ function showExample(){                              // let people SEE a result 
   catch(e){ go("record"); }
 }
 window.showExample=showExample;
+/* ---- opt-in short share code (stores a snapshot server-side; TTL ~13 months) ---- */
+async function createShareLink(){
+  if(!(typeof LASTPOSTS!=="undefined"&&LASTPOSTS.length)){toast("Analyse a feed first");return;}
+  const btn=$("#link-btn"); const orig=btn?btn.textContent:""; if(btn){btn.textContent="creating link…";btn.disabled=true;}
+  const snap={v:1,plat:PLATFORM,posts:LASTPOSTS.slice(0,40).map(p=>({a:p.author,t:p.text,l:p.lean,h:p.heat,k:p.topic,e:p.emo,b:p.bot})),report:REPORT};
+  try{
+    const r=await fetch(API_URL,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({save:snap})});
+    const d=await r.json();
+    if(d&&d.code){
+      const url=location.origin+"/#c="+d.code;
+      const box=$("#sharelink"); if(box){box.style.display="flex";const inp=box.querySelector("input");if(inp)inp.value=url;}
+      try{await navigator.clipboard.writeText(url);toast("🔗 Share link copied!");}catch(e){toast("Your link is ready 👇");}
+    }else toast((d&&d.error)?d.error:"Couldn't create a link — try again.");
+  }catch(e){toast("Couldn't reach the server.");}
+  if(btn){btn.textContent=orig||"🔗 Create a share link";btn.disabled=false;}
+}
+window.createShareLink=createShareLink;
+function copyShareLink(){const inp=$("#sharelink input");if(inp){inp.select();try{navigator.clipboard.writeText(inp.value);}catch(e){}toast("Copied 🔗");}}
+window.copyShareLink=copyShareLink;
+async function loadShared(code){
+  try{
+    toast("opening a shared feed…");
+    const r=await fetch(API_URL,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({load:code})});
+    const d=await r.json();
+    if(d&&d.snap&&Array.isArray(d.snap.posts)&&d.snap.posts.length){
+      PLATFORM=d.snap.plat||"x";
+      const posts=d.snap.posts.map(p=>{const q=P(p.a||"",p.a||"",p.t||"",c1(p.l),c01(p.h),normTopic(p.k),normEmo(p.e));q.bot=c01(p.b);return q;});
+      analyse(posts,"A shared feed",d.snap.report||null,true);
+      go("dash");
+      toast("👀 You're viewing someone's shared feed");
+    }else toast("That share link has expired or is invalid.");
+  }catch(e){toast("Couldn't open that share link.");}
+}
+window.loadShared=loadShared;
 window.addEventListener("popstate",function(e){ render(e.state&&e.state.v?e.state.v:"login"); });
 try{ if(!history.state)history.replaceState({v:"login"},"",location.pathname+location.search); }catch(e){}
 
@@ -1047,8 +1095,8 @@ async function novaAnalyseImages(images){
 async function extractImages(files,onProg){
   const canvases=[];
   for(const f of files)if(f.type.startsWith("image/")){canvases.push(await imgToCanvas(f));if(onProg)onProg(canvases.length,files.length);}
-  for(const f of files)if(f.type.startsWith("video/"))canvases.push(...await videoFrames(f,12));
-  return canvases.slice(0,12).map(cv=>cv.toDataURL("image/jpeg",0.82).split(",")[1]);  // was 8 — use more of what people capture
+  for(const f of files)if(f.type.startsWith("video/"))canvases.push(...await videoFrames(f,18));
+  return canvases.slice(0,20).map(cv=>cv.toDataURL("image/jpeg",0.82).split(",")[1]);  // up to 20 — matches the 15-20 shots we recommend
 }
 function novaToPosts(d){return d.posts.map(p=>{const h=(p.author||"").trim();const q=P(h,h,String(p.text||"").slice(0,160),c1(p.lean),c01(p.heat),normTopic(p.topic),normEmo(p.emo));q.bot=c01(p.bot);return q;});}
 function novaReport(d){return {engine:"AI · Amazon Nova (LLM)",highlight:d.highlight||"",reinforcing:d.reinforcing||"",makesYou:d.makesYou||{},howInfluencing:d.howInfluencing||"",blindSpots:d.blindSpots||[],accounts:d.accounts||[],suggestions:d.suggestions||[],aiSlopPct:(typeof d.aiSlopPct==="number")?Math.round(d.aiSlopPct):null};}
@@ -1275,10 +1323,12 @@ function downloadCard(){const a=document.createElement("a");a.download="my-dooms
 window.copyCaption=copyCaption;window.downloadCard=downloadCard;
 $("#modal").addEventListener("click",e=>{if(e.target===$("#modal"))closeShare();});
 
-/* pre-render a sample so dashboard isn't empty if opened directly */
-analyse(PERSONAS.doom.posts,PERSONAS.doom.title);
+/* pre-render a sample so dashboard isn't empty if opened directly (skipSave — don't pollute history) */
+analyse(PERSONAS.doom.posts,PERSONAS.doom.title,null,true);
+if(SHARE_CODE)loadShared(SHARE_CODE);   // opening a shared link → fetch that snapshot and show it
 })();
 </script>
+
 
 
 
