@@ -335,7 +335,7 @@ var GA_ID = "";
       <div style="max-width:380px;margin:0 auto;">
         <button class="btn primary" onclick="go('record')">See what's feeding you →</button>
         <button class="btn ghost" onclick="showExample()" style="width:100%;margin-top:10px">👀 Show me an example first</button>
-        <div class="fine">No sign-up, no account, ever. Your feed is read on your device — nothing is uploaded.</div>
+        <div class="fine">No sign-up, no account, ever. Read by an AI and instantly discarded — or fully on your device if you pick Quick. Nothing about you is ever stored.</div>
       </div>
       <div class="trust">
         <span>🔒 <b>Private</b> — nothing about you is stored</span>
@@ -394,10 +394,10 @@ var GA_ID = "";
     </div>
     <div class="engine-row">
       <span class="lbl">Read with</span>
-      <button class="eng" data-eng="local" aria-pressed="true">⚡ Quick <span class="sub2">pattern-match on your phone</span></button>
-      <button class="eng" data-eng="remote" aria-pressed="false">🧠 Deep <span class="sub2">an AI (Amazon Nova, an LLM) reads it</span></button>
+      <button class="eng" data-eng="remote" aria-pressed="true">🧠 Deep <span class="sub2">an AI (Amazon Nova) reads it — sharpest</span></button>
+      <button class="eng" data-eng="local" aria-pressed="false">⚡ Quick <span class="sub2">fully on your phone — most private</span></button>
     </div>
-    <p id="engine-note" style="text-align:center;color:var(--muted);font-size:12px;margin:9px auto 0;max-width:460px;line-height:1.5">Pick one: <b>Quick</b> is instant &amp; fully private; <b>Deep</b> sends the text to an AI model for a much sharper read. You can also switch to the AI read <em>after</em> a Quick one.</p>
+    <p id="engine-note" style="text-align:center;color:var(--muted);font-size:12px;margin:9px auto 0;max-width:460px;line-height:1.5"><b>Deep</b> is the default — an AI (Amazon Nova) reads the text for the sharpest result, then discards it (nothing is stored). Prefer to keep everything on your device? Pick <b>Quick</b>.</p>
     <div class="proc" id="proc">
       <div class="ic" style="font-size:34px">🧠</div>
       <div class="bar"><i id="bar"></i></div>
@@ -644,7 +644,7 @@ function render(v){
     const en=document.querySelector("#engine-note"); if(en)en.style.display=vis?"none":"block";
     const pn=(PLAT_INFO[PLATFORM]&&PLAT_INFO[PLATFORM].name)||"your";
     if(priv)priv.textContent=vis?"🔒 read by an AI (Amazon Nova), then discarded — never stored":"🔒 nothing about you is stored";
-    const sub=$("#upload-sub"); if(sub)sub.textContent=vis?("Your "+pn+" screenshots are read by an AI (Amazon Nova), then discarded — nothing is stored."):"Read on your phone (Quick), or by an AI if you pick Deep — nothing about you is stored.";
+    const sub=$("#upload-sub"); if(sub)sub.textContent=vis?("Your "+pn+" screenshots are read by an AI (Amazon Nova), then discarded — nothing is stored."):"Read by an AI (Deep — the default), then discarded; or fully on your phone with Quick. Nothing about you is stored.";
   }
   window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -1066,7 +1066,7 @@ async function deepEnrich(posts){
 /* ---------- engine (local vs remote Nova) + the narrative report ---------- */
 const API_URL="https://r2i1aw70ki.execute-api.us-east-1.amazonaws.com";
 try{fetch(API_URL,{method:"POST",body:JSON.stringify({pv:1}),keepalive:true});}catch(e){}  // anonymous page-view beacon → live usage log; no cookies, nothing stored
-let ENGINE="local", REPORT=null;
+let ENGINE="remote", REPORT=null;   // default to Deep/Nova — the on-device Quick heuristic flatlines on thin samples
 const VISUAL=new Set(["instagram","tiktok"]);
 function c1(v){v=+v;return isFinite(v)?Math.max(-1,Math.min(1,v)):0;}
 function c01(v){v=+v;return isFinite(v)?Math.max(0,Math.min(1,v)):0;}
@@ -1221,7 +1221,10 @@ function analyse(posts,title,report,skipSave){LASTPOSTS=posts;LASTTITLE=title||"
   renderRadar("#radar-tone",EMOS,shares(posts,EMOS,"emo"),BASE_TONE,.45);
   REPORT=report||localReport(posts);
   renderReport(REPORT);renderAccounts(REPORT.accounts);renderSuggestions(REPORT.suggestions);
-  if(!skipSave){saveHistory(st);pingAgg(st.score);}renderHistory();
+  if(!skipSave){saveHistory(st);
+    const realSignal=posts.length>=6 && (st.spread>0.05 || Math.abs(st.meanLean)>0.05 || st.meanHeat>0.1);
+    if(realSignal)pingAgg(st.score);   // don't feed the shared aggregate a thin/no-signal default score
+  }renderHistory();
   const vis=VISUAL.has(PLATFORM);  // hide the political (X-only) cards on visual platforms
   ["#compass","#spectrum","#leanbar"].forEach(sel=>{const e2=$(sel),c=e2&&e2.closest(".card");if(c)c.style.display=vis?"none":"";});
 }
@@ -1328,6 +1331,7 @@ analyse(PERSONAS.doom.posts,PERSONAS.doom.title,null,true);
 if(SHARE_CODE)loadShared(SHARE_CODE);   // opening a shared link → fetch that snapshot and show it
 })();
 </script>
+
 
 
 
