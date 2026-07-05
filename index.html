@@ -299,6 +299,10 @@ var GA_ID = "";
   .modal-card h3{margin:0 0 4px;font-size:18px;}
   .modal-card .sub{color:var(--ink-2);font-size:13px;margin:0 0 16px;}
   #sharecanvas{width:100%;border-radius:12px;border:1px solid var(--hair);display:block;}
+  .share-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px;margin:12px 0 4px;}
+  .share-grid .sbtn{background:var(--surface-2);border:1px solid var(--hair-2);color:var(--ink);border-radius:10px;padding:11px 10px;
+    font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;transition:border-color .12s,background .12s;}
+  .share-grid .sbtn:hover{border-color:var(--accent);background:rgba(55,214,196,.06);}
   .modal-actions{display:flex;gap:9px;margin-top:16px;}
   .modal-actions .btn{padding:11px 14px;font-size:13.5px;}
   .close-x{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;}
@@ -441,7 +445,7 @@ var GA_ID = "";
             <div class="arch-tag" id="a-tag">—</div>
             <div class="arch-pct" id="a-pct">—</div>
           </div>
-          <button class="btn primary share-btn" onclick="openShare()" style="width:auto">Share your doomscroll ↗</button>
+          <button class="btn primary share-btn" onclick="openShare()" style="width:auto">📲 Share this result</button>
         </div>
       </div>
 
@@ -579,7 +583,7 @@ var GA_ID = "";
 </section>
 
 <footer>
-  <b>doomscrollstats.com</b> is a free, open tool. Text feeds (X, YouTube) are read <b>on your device</b>; image feeds (Instagram, TikTok) are read by a model on the server and discarded immediately — <b>nothing about you is ever stored</b>.
+  <b>doomscrollstats.com</b> is a free, open, ad-free tool. Your feed is read by an AI (Amazon Nova) and instantly discarded — or fully on your device if you pick Quick. <b>Nothing about you is ever stored</b>.
   Outlet positions are approximate, from public media-bias ratings, and used only to show <em>relative</em> distance.
   It measures extremity <b>symmetrically</b> — a hard-left bubble and a hard-right bubble score the same. This is a mirror, not a verdict:
   political classification of short text is uncertain, so treat every score as a conversation starter. Sample feeds are fictional.
@@ -588,11 +592,21 @@ var GA_ID = "";
 <div class="modal" id="modal">
   <div class="card modal-card" style="position:relative">
     <button class="close-x" onclick="closeShare()">×</button>
-    <h3>Your doomscroll card</h3>
-    <p class="sub">Post it and ask a friend: what's yours?</p>
+    <h3>Share your result</h3>
+    <p class="sub">Post it back where you found your feed — help a friend see their own bubble 🌍</p>
     <canvas id="sharecanvas" width="600" height="600"></canvas>
+    <button class="btn primary" id="webshare-btn" onclick="shareResult()" style="width:100%;margin-top:14px;display:none">📲 Share…</button>
+    <div class="share-grid">
+      <button class="sbtn" onclick="shareTo('x')">𝕏&nbsp; X</button>
+      <button class="sbtn" onclick="shareTo('instagram')">📸 Instagram</button>
+      <button class="sbtn" onclick="shareTo('tiktok')">🎵 TikTok</button>
+      <button class="sbtn" onclick="shareTo('facebook')">📘 Facebook</button>
+      <button class="sbtn" onclick="shareTo('reddit')">👽 Reddit</button>
+      <button class="sbtn" onclick="shareTo('linkedin')">💼 LinkedIn</button>
+      <button class="sbtn" onclick="shareTo('whatsapp')">💬 WhatsApp</button>
+    </div>
     <div class="modal-actions">
-      <button class="btn primary" onclick="copyCaption()">Copy caption</button>
+      <button class="btn ghost" onclick="copyCaption()">Copy caption</button>
       <button class="btn ghost" onclick="downloadCard()">Download image</button>
     </div>
   </div>
@@ -1289,9 +1303,39 @@ function score(text){
 function classifyPaste(raw){return raw.split(/\n+/).map(s=>s.trim()).filter(s=>s.length>3).map(line=>{const s=score(line);return P("You","@you",line.slice(0,140),s.lean,s.heat,s.topic,s.emo);});}
 
 /* ---------- share ---------- */
-function openShare(){drawCard();$("#modal").classList.add("on");}
+function openShare(){drawCard();const wb=$("#webshare-btn");if(wb)wb.style.display=(navigator.share)?"block":"none";$("#modal").classList.add("on");}
 function closeShare(){$("#modal").classList.remove("on");}
 window.openShare=openShare;window.closeShare=closeShare;
+function captionText(){const hl=(REPORT&&REPORT.highlight)?REPORT.highlight:ARCH.n;return ARCH.e+" My feed is: "+hl+" — "+(ARCH.pct||"").replace(/[^\x20-\x7E]/g,"").trim()+". What's yours? → doomscrollstats.com";}
+async function shareResult(){                       // native share sheet — best on mobile (straight to Instagram/TikTok/anywhere) with the card image attached
+  const cap=captionText();
+  try{
+    const canvas=$("#sharecanvas");
+    if(navigator.canShare&&canvas){
+      const blob=await new Promise(r=>canvas.toBlob(r,"image/png"));
+      if(blob){const file=new File([blob],"my-doomscroll.png",{type:"image/png"});
+        if(navigator.canShare({files:[file]})){await navigator.share({files:[file],text:cap});return;}}
+    }
+    if(navigator.share){await navigator.share({text:cap,url:"https://doomscrollstats.com"});return;}
+    toast("Pick a network below to share ↓");
+  }catch(e){/* user cancelled */}
+}
+window.shareResult=shareResult;
+function shareTo(p){                                 // desktop / explicit per-network share
+  const cap=captionText(),url="https://doomscrollstats.com";
+  const t=encodeURIComponent(cap),u=encodeURIComponent(url),ttl=encodeURIComponent("My feed, read back to me — what's yours?");
+  if(p==="instagram"||p==="tiktok"){downloadCard();
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(cap).catch(()=>{});
+    toast("Card saved + caption copied — open "+(p==="instagram"?"Instagram":"TikTok")+" and post it 📸");return;}
+  const links={
+    x:"https://twitter.com/intent/tweet?text="+t,
+    facebook:"https://www.facebook.com/sharer/sharer.php?u="+u+"&quote="+t,
+    linkedin:"https://www.linkedin.com/sharing/share-offsite/?url="+u,
+    reddit:"https://www.reddit.com/submit?title="+ttl+"&url="+u,
+    whatsapp:"https://wa.me/?text="+t};
+  window.open(links[p]||links.x,"_blank","noopener");
+}
+window.shareTo=shareTo;
 /* share card — styled after the devprint design language (deep navy + purple/cyan glows,
    4-stop rainbow gradient accents, rounded rainbow mark, orbit motif, mono eyebrows). */
 function _rr(x,X,Y,W,H,R){x.beginPath();x.moveTo(X+R,Y);x.arcTo(X+W,Y,X+W,Y+H,R);x.arcTo(X+W,Y+H,X,Y+H,R);x.arcTo(X,Y+H,X,Y,R);x.arcTo(X,Y,X+W,Y,R);x.closePath();}
@@ -1339,7 +1383,7 @@ function drawCard(){const c=$("#sharecanvas");c.width=1080;c.height=1080;
 }
 function wrap(x,text,cx,y,maxw,lh){const words=text.split(" ");let line="",yy=y;
   for(const w of words){const test=line+w+" ";if(x.measureText(test).width>maxw&&line){x.fillText(line.trim(),cx,yy);line=w+" ";yy+=lh;}else line=test;}x.fillText(line.trim(),cx,yy);return yy;}
-function copyCaption(){const hl=(REPORT&&REPORT.highlight)?REPORT.highlight:ARCH.n;const cap=ARCH.e+" My feed is: "+hl+" — "+(ARCH.pct||"").replace(/[^\x20-\x7E]/g,"").trim()+". What's yours? → doomscrollstats.com";
+function copyCaption(){const cap=captionText();
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(cap).then(()=>toast("Caption copied — go post it 😈")).catch(()=>toast("Couldn't copy"));
   else toast("Clipboard unavailable");}
 function downloadCard(){const a=document.createElement("a");a.download="my-doomscroll.png";a.href=$("#sharecanvas").toDataURL("image/png");a.click();toast("Saved your card 📸");}
@@ -1351,6 +1395,7 @@ analyse(PERSONAS.doom.posts,PERSONAS.doom.title,null,true);
 if(SHARE_CODE)loadShared(SHARE_CODE);   // opening a shared link → fetch that snapshot and show it
 })();
 </script>
+
 
 
 
