@@ -140,6 +140,17 @@ var GA_ID = "";
   .steps .tip{margin-top:20px;background:var(--surface-2);border:1px solid var(--hair);border-radius:11px;
     padding:12px 14px;font-size:13px;color:var(--ink-2);display:flex;gap:10px;}
   .steps .tip b{color:var(--accent);}
+  .coffee-card{display:flex;align-items:center;gap:16px;max-width:640px;margin:28px auto 0;text-decoration:none;
+    background:linear-gradient(120deg,rgba(255,209,102,.11),rgba(255,209,102,.035));border:1px solid rgba(255,209,102,.30);
+    border-radius:16px;padding:18px 20px;transition:border-color .15s,transform .15s;}
+  .coffee-card:hover{border-color:rgba(255,209,102,.6);transform:translateY(-1px);}
+  .coffee-card .coffee-emoji{font-size:34px;line-height:1;flex-shrink:0;}
+  .coffee-card .coffee-h{font-weight:800;color:var(--ink);font-size:16px;}
+  .coffee-card .coffee-p{color:var(--ink-2);font-size:13px;line-height:1.5;margin-top:3px;}
+  .coffee-card .coffee-btn{margin-left:auto;flex-shrink:0;background:#ffd166;color:#2a1e00;font-weight:800;font-size:14px;
+    padding:11px 17px;border-radius:11px;white-space:nowrap;}
+  @media(max-width:560px){.coffee-card{flex-wrap:wrap;text-align:center;justify-content:center;}
+    .coffee-card .coffee-txt{flex:1 1 100%;}.coffee-card .coffee-btn{margin:4px auto 0;width:100%;text-align:center;}}
   .nav-row{display:flex;gap:12px;justify-content:center;margin:26px auto 0;max-width:760px;}
   .nav-row .btn{width:auto;padding:12px 22px;}
 
@@ -518,6 +529,15 @@ var GA_ID = "";
           </div>
         </div>
       </div></div>
+
+      <a class="coffee-card" href="https://www.buymeacoffee.com/jhammant" target="_blank" rel="noopener">
+        <div class="coffee-emoji">☕</div>
+        <div class="coffee-txt">
+          <div class="coffee-h">Found this useful? Buy me a coffee.</div>
+          <div class="coffee-p">This tool is free, open-source and ad-free — on purpose. A coffee covers the running costs and keeps it that way. No pressure, no login, no catch.</div>
+        </div>
+        <span class="coffee-btn">☕ Buy a coffee →</span>
+      </a>
 
       <div class="nav-row"><button class="btn ghost" onclick="go('upload')" style="width:auto">← Analyse another feed</button>
         <button class="btn ghost" onclick="exportData()" style="width:auto">⬇ Download all my data</button></div>
@@ -1331,6 +1351,7 @@ analyse(PERSONAS.doom.posts,PERSONAS.doom.title,null,true);
 if(SHARE_CODE)loadShared(SHARE_CODE);   // opening a shared link → fetch that snapshot and show it
 })();
 </script>
+
 
 
 
