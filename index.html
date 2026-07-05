@@ -131,6 +131,10 @@ var GA_ID = "";
   .rec-grid{display:grid;grid-template-columns:230px 1fr;gap:0;max-width:760px;margin:0 auto;
     background:var(--surface);border:1px solid var(--hair);border-radius:16px;overflow:hidden;}
   @media(max-width:640px){.rec-grid{grid-template-columns:1fr;}}
+  .rec-grid.solo{grid-template-columns:1fr;}   /* screenshots: no device sidebar, so steps span full width */
+  .pway{display:flex;gap:12px;align-items:flex-start;margin:0 0 12px;color:var(--ink-2);line-height:1.6;font-size:14.5px;}
+  .pway:last-child{margin-bottom:0;}
+  .pway-n{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:rgba(55,214,196,.14);color:var(--accent);font-weight:800;display:flex;align-items:center;justify-content:center;font-size:13px;}
   .dev-tabs{border-right:1px solid var(--hair);padding:8px;display:flex;flex-direction:column;gap:4px;}
   @media(max-width:640px){.dev-tabs{flex-direction:row;border-right:none;border-bottom:1px solid var(--hair);overflow-x:auto;}}
   .dev-tab{text-align:left;background:none;border:none;color:var(--ink-2);font:inherit;font-weight:600;font-size:13.5px;
@@ -613,13 +617,36 @@ var GA_ID = "";
 
 <section class="view" id="view-parent">
   <div class="wrap" style="max-width:660px;padding-top:20px;">
-    <div class="page-h"><h2>👨‍👧 Doing this with your kids</h2><p>A calm way to see what their feed is really serving them — together, not over their shoulder.</p></div>
-    <div class="card"><div class="card-b" style="line-height:1.65;color:var(--ink-2)">
-      <p style="margin:0 0 12px"><b style="color:var(--ink)">Make it a shared thing, not an inspection.</b> Sit together and run it on <em>your</em> feed first — seeing your own bubble before theirs is disarming, and it makes the point without any finger-pointing.</p>
-      <p style="margin:0 0 12px"><b style="color:var(--ink)">It's a mirror, not a verdict.</b> It never says anyone's been "radicalised" — it just shows the shape of a feed. Let the result start a conversation, not an argument.</p>
-      <p style="margin:0 0 12px"><b style="color:var(--ink)">Nothing is stored or shared</b> unless you choose to. If you're apart, they can run it and tap <b>"Create a share link"</b> to send you the result.</p>
-      <p style="margin:0"><b style="color:var(--ink)">What to look at together:</b> how much <em>outrage</em> the feed runs on, what it's quietly training them to <em>be, feel &amp; buy</em>, and the viewpoints it never shows them.</p>
+    <div class="page-h"><h2>👨‍👧 Doing this with your kids</h2><p>A calm way to see what their feed is really serving them — a conversation starter, not an inspection.</p></div>
+
+    <div class="card"><div class="card-b">
+      <h3 style="margin:0 0 6px;font-size:16px">The golden rule</h3>
+      <p style="margin:0;color:var(--ink-2);line-height:1.6">Run it on <em>your own</em> feed first, together. Seeing your own bubble before theirs disarms the whole thing — and it's genuinely surprising. It never says anyone's been "radicalised"; it just shows the <em>shape</em> of a feed.</p>
     </div></div>
+
+    <div class="card" style="margin-top:14px"><div class="card-b">
+      <h3 style="margin:0 0 12px;font-size:16px">Two ways to do it</h3>
+      <div class="pway"><div class="pway-n">A</div><div><b style="color:var(--ink)">Side by side.</b> Sit together and screenshot or screen-record their <b>For You</b> feed on their phone — two minutes. <button class="lnk" onclick="go('record')" style="color:var(--accent);font-weight:700">See how to capture →</button></div></div>
+      <div class="pway"><div class="pway-n">B</div><div><b style="color:var(--ink)">They do it, then share.</b> If they'd rather do it privately, they run it themselves and tap <b>"Create a share link"</b> to send you the result. Nothing is stored unless they choose to.</div></div>
+    </div></div>
+
+    <div class="card" style="margin-top:14px"><div class="card-b">
+      <h3 style="margin:0 0 6px;font-size:16px">📩 Send your teen a nudge</h3>
+      <p style="margin:0 0 12px;color:var(--ink-2);line-height:1.6">Copy a friendly, low-pressure message to text them — curiosity works far better than a lecture.</p>
+      <button class="btn primary" onclick="copyKidMessage()" style="width:auto">Copy a message to send them</button>
+    </div></div>
+
+    <div class="card" style="margin-top:14px"><div class="card-b">
+      <h3 style="margin:0 0 10px;font-size:16px">What to look at together</h3>
+      <ul style="margin:0;padding-left:20px;color:var(--ink-2);line-height:1.75">
+        <li>How much <b>outrage</b> the feed runs on — is it keeping them wound up?</li>
+        <li>What it's quietly training them to <em>be, feel &amp; buy</em>.</li>
+        <li>The viewpoints and topics it <b>never</b> shows them.</li>
+        <li>How much is <b>AI / bot filler</b> versus real people.</li>
+      </ul>
+      <p style="margin:14px 0 0;color:var(--muted);font-size:13px">Let the result start the conversation — not win an argument.</p>
+    </div></div>
+
     <div class="nav-row"><button class="btn ghost" onclick="goBack()" style="width:auto">← Back</button><button class="btn primary" onclick="go('record')" style="width:auto">Capture a feed together →</button></div>
   </div>
 </section>
@@ -753,6 +780,12 @@ function showExample(){                              // let people SEE a result 
   catch(e){ go("record"); }
 }
 window.showExample=showExample;
+function copyKidMessage(){
+  const msg="Saw this and thought of you 👀 It's a free tool that reads your feed back to you and shows what the algorithm's quietly training you into — no login, nothing saved. I did mine and got a weirdly accurate result 😅 have a go and show me yours? → doomscrollstats.com";
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(msg).then(()=>toast("Message copied — paste it into a text 📩")).catch(()=>toast("Couldn't copy"));
+  else toast("Clipboard unavailable");
+}
+window.copyKidMessage=copyKidMessage;
 /* ---- opt-in short share code (stores a snapshot server-side; TTL ~13 months) ---- */
 async function createShareLink(){
   if(!(typeof LASTPOSTS!=="undefined"&&LASTPOSTS.length)){toast("Analyse a feed first");return;}
@@ -851,11 +884,16 @@ const PLAT_INFO={
   facebook:{name:"Facebook",feed:"News Feed",site:"facebook.com"}
 };
 const DEV={
-  ios:["Open <b>{APP}</b> on your <b>{FEED}</b> feed.","Swipe down from the top-right and tap the ⏺ <b>record</b> button.","<b>Scroll for ~30 seconds</b>, then stop. Done — pick the clip next."],
-  android:["Open <b>{APP}</b> on your <b>{FEED}</b> feed.","Swipe down and tap <b>Screen record</b> → Start.","<b>Scroll for ~30 seconds</b>, then stop. Grab the clip next."],
-  desktop:["Open <b>{URL}</b> on your <b>{FEED}</b> feed.","<b>Mac:</b> press <b>⇧⌘5</b>, click <b>Record Entire Screen</b>, then <b>Record</b>. <b>Windows:</b> press <b>⊞+Alt+R</b>.","<b>Scroll</b> for ~30 seconds.","<b>Mac:</b> click the <b>⏹ stop</b> button in the top menu bar — the clip saves to your <b>Desktop</b>. Then upload it next."]
+  ios:["First, add the recorder if you haven't: <b>Settings → Control Centre → add Screen Recording</b>.","Open <b>{APP}</b> and go to your <b>{FEED}</b> feed — the algorithm's picks, not the people you follow.","Swipe down from the top-right corner, tap the ⏺ <b>Record</b> button, wait for the 3-2-1.","<b>Scroll slowly for a minute or so</b> — pause on posts like you normally would. Tap the red clock/bar at the top → <b>Stop</b>.","The clip saves to <b>Photos</b>. Come back here and upload it — it's read on your device."],
+  android:["Open <b>{APP}</b> and go to your <b>{FEED}</b> feed — the algorithm's picks, not the people you follow.","Swipe down twice for Quick Settings, tap <b>Screen record</b> → Start (allow if asked).","<b>Scroll slowly for a minute or so</b>, pausing on posts as you normally would.","Pull down the notification and tap <b>Stop</b>. Grab the clip from your Gallery and upload it here."],
+  desktop:["Open <b>{URL}</b> and go to your <b>{FEED}</b> feed.","<b>Mac:</b> press <b>⇧⌘5</b> → <b>Record Entire Screen</b> → <b>Record</b>. &nbsp;<b>Windows:</b> press <b>⊞+Alt+R</b> (Xbox Game Bar).","<b>Scroll slowly for ~a minute</b>, pausing on posts as you normally would.","<b>Mac:</b> click the <b>⏹</b> in the top menu bar (clip saves to your <b>Desktop</b>). &nbsp;<b>Windows:</b> press <b>⊞+Alt+R</b> again. Then upload it here."]
 };
-const SHOTS=["Open <b>{APP}</b> on your <b>{FEED}</b> feed.","<b>Screenshot</b>, scroll a little, screenshot again — <b>15–20 times</b> down your feed. More = a sharper, less spiky read.","Drop <b>all the screenshots</b> in at once. That's it."];
+const SHOTS=[
+ "Open <b>{APP}</b> and go to your <b>{FEED}</b> feed — the one the algorithm serves you, not the accounts you follow.",
+ "<b>Screenshot</b> the screen. &nbsp;<b>iPhone:</b> side + volume-up · <b>Android:</b> power + volume-down · <b>Mac:</b> ⇧⌘3 · <b>Windows:</b> ⊞+Shift+S.",
+ "Scroll down a bit and screenshot again — repeat <b>15–20 times</b> down the feed. More shots = a sharper, less spiky read.",
+ "Come back and drop <b>all the screenshots in at once</b>. That's it — nothing is uploaded on the Quick reader."
+];
 let METHOD="shots", DEVICE="ios";
 function renderSteps(){
   const p=PLAT_INFO[PLATFORM]||PLAT_INFO.x;
@@ -866,6 +904,7 @@ function renderSteps(){
     ? fill('Grab your <b>{FEED}</b> feed on <b>{APP}</b> — that\'s the algorithm. More screenshots = sharper. <br>Screenshot — <b>Mac:</b> ⇧⌘3 · <b>Windows:</b> ⊞+Shift+S · <b>iPhone:</b> side+volume-up · <b>Android:</b> power+volume-down.')
     : fill('Record your <b>{FEED}</b> feed on <b>{APP}</b>, not the accounts you follow — that\'s the algorithm. The longer you scroll, the sharper the result.');
   $("#dev-tabs").style.display = METHOD==="shots" ? "none" : "";
+  const rg=$("#rec-grid"); if(rg)rg.classList.toggle("solo", METHOD==="shots");   // no sidebar for screenshots → steps span full width
   if($("#rec-next"))$("#rec-next").textContent = METHOD==="shots" ? "I've got my screenshots →" : "I've got my recording →";
   box.innerHTML='<ol>'+list.map(s=>'<li>'+s+'</li>').join('')+'</ol><div class="tip"><span>💡</span><span>'+tip+'</span></div>';
 }
@@ -1512,6 +1551,8 @@ analyse(PERSONAS.doom.posts,PERSONAS.doom.title,null,true);
 if(SHARE_CODE)loadShared(SHARE_CODE);   // opening a shared link → fetch that snapshot and show it
 })();
 </script>
+
+
 
 
 
