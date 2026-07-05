@@ -132,6 +132,27 @@ var GA_ID = "";
     background:var(--surface);border:1px solid var(--hair);border-radius:16px;overflow:hidden;}
   @media(max-width:640px){.rec-grid{grid-template-columns:1fr;}}
   .rec-grid.solo{grid-template-columns:1fr;}   /* screenshots: no device sidebar, so steps span full width */
+  .sf-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
+  .sf-tile{text-align:center;padding:20px 14px;}
+  .sf-big{font-size:34px;font-weight:800;line-height:1;}.sf-big span{font-size:14px;color:var(--muted);font-weight:600;}
+  .sf-cap{font-size:12.5px;color:var(--ink-2);margin-top:6px;}
+  .sf-row{display:flex;align-items:center;gap:10px;font-size:13px;margin:7px 0;}
+  .sf-row .sf-l{width:78px;color:var(--ink-2);}
+  .sf-row .sf-track{flex:1;height:9px;background:var(--surface-2);border-radius:99px;overflow:hidden;}
+  .sf-row .sf-track i{display:block;height:100%;border-radius:99px;}
+  .sf-row b{width:34px;text-align:right;font-variant-numeric:tabular-nums;}
+  .sf-arch{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--hair);font-size:14px;}
+  .sf-arch:last-child{border-bottom:none;}
+  .seo{border-top:1px solid var(--hair);margin-top:24px;padding:44px 20px 8px;color:var(--ink-2);}
+  .seo h2{color:var(--ink);font-family:var(--serif);font-weight:400;font-size:26px;margin:0 0 12px;}
+  .seo h3{color:var(--ink);font-size:17px;margin:30px 0 12px;}
+  .seo p{line-height:1.7;font-size:15px;}
+  .faq details{border:1px solid var(--hair);border-radius:11px;padding:0 15px;margin-bottom:8px;background:var(--surface);}
+  .faq summary{cursor:pointer;padding:14px 0;font-weight:700;color:var(--ink);list-style:none;font-size:14.5px;}
+  .faq summary::-webkit-details-marker{display:none;}
+  .faq summary::before{content:"+ ";color:var(--accent);font-weight:800;}
+  .faq details[open] summary::before{content:"– ";}
+  .faq details>div{padding:0 0 14px;line-height:1.65;font-size:14px;color:var(--ink-2);}
   .pway{display:flex;gap:12px;align-items:flex-start;margin:0 0 12px;color:var(--ink-2);line-height:1.6;font-size:14.5px;}
   .pway:last-child{margin-bottom:0;}
   .pway-n{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:rgba(55,214,196,.14);color:var(--accent);font-weight:800;display:flex;align-items:center;justify-content:center;font-size:13px;}
@@ -357,6 +378,7 @@ var GA_ID = "";
   <div class="top-in">
     <div class="mark" onclick="go('login')"><span class="spin">🌀</span>doomscroll<b>stats</b><span class="tld">.com</span></div>
     <div class="right">
+      <button class="lnk" onclick="go('stats')">📊 Stats</button>
       <button class="lnk" onclick="go('about')">About</button>
       <a class="lnk" href="https://www.buymeacoffee.com/jhammant" target="_blank" rel="noopener" style="text-decoration:none" title="Buy me a coffee">☕</a>
     </div>
@@ -615,6 +637,14 @@ var GA_ID = "";
   </div>
 </section>
 
+<section class="view" id="view-stats">
+  <div class="wrap" style="max-width:720px;padding-top:20px;">
+    <div class="page-h"><h2>📊 The State of the Feed</h2><p>A live, anonymous snapshot of what the algorithms are serving everyone who's checked. Only counts — never anyone's actual feed.</p></div>
+    <div id="stats-body"></div>
+    <div class="nav-row"><button class="btn ghost" onclick="goBack()" style="width:auto">← Back</button><button class="btn primary" onclick="go('record')" style="width:auto">Check your own feed →</button></div>
+  </div>
+</section>
+
 <section class="view" id="view-parent">
   <div class="wrap" style="max-width:660px;padding-top:20px;">
     <div class="page-h"><h2>👨‍👧 Doing this with your kids</h2><p>A calm way to see what their feed is really serving them — a conversation starter, not an inspection.</p></div>
@@ -665,6 +695,23 @@ var GA_ID = "";
   </div>
 </section>
 
+<section class="seo">
+  <div class="wrap" style="max-width:760px">
+    <h2>See your social media filter bubble</h2>
+    <p>Every social feed is shaped by an algorithm you can't see. <b>doomscrollstats.com</b> is a free tool that reads your feed — on <b>X (Twitter), Instagram, TikTok, YouTube, Reddit, LinkedIn or Facebook</b> — and shows you the shape of your filter bubble: what the algorithm is quietly training you to <em>be, feel and buy</em>, how much outrage and rage-bait it runs on, which accounts and viewpoints dominate, the perspectives it never shows you, and how much is AI-generated slop. It's non-partisan by design, reads your feed on your device (or via an AI that stores nothing), and is fully open-source.</p>
+    <h3>Frequently asked questions</h3>
+    <div class="faq">
+      <details><summary>What is a filter bubble or echo chamber?</summary><div>A filter bubble is the narrowed, personalised slice of content an algorithm decides to show you — steadily reinforcing what you already believe or react to, while quietly hiding opposing views. Over time it can make one perspective feel like the whole world. doomscrollstats.com makes that invisible shaping visible.</div></details>
+      <details><summary>Is doomscrollstats.com free?</summary><div>Yes — completely free, with no ads and no account required. If you find it useful you can buy the maker a coffee, but nothing is gated.</div></details>
+      <details><summary>Do you store my feed or my data?</summary><div>No. Text feeds can be read entirely on your device; image feeds are read once by an AI (Amazon Nova) and immediately discarded. Nothing about you or your feed is stored — only anonymous aggregate counts (like the balance-score distribution) that power the State of the Feed page.</div></details>
+      <details><summary>Is it politically biased?</summary><div>No — it's non-partisan by construction. Extremity is measured symmetrically, so a hard-left feed and a hard-right feed of equal intensity get equal-magnitude scores. It measures the shape of your feed, not whether you're right or wrong.</div></details>
+      <details><summary>Which platforms does it work with?</summary><div>X (Twitter), Instagram, TikTok, YouTube, Reddit, LinkedIn and Facebook.</div></details>
+      <details><summary>How do I check my feed?</summary><div>Take 15–20 screenshots of your For You / home feed as you scroll, or screen-record it for a minute, then drop them in. It reads the posts and shows your result in seconds.</div></details>
+    </div>
+  </div>
+</section>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"doomscrollstats.com","url":"https://doomscrollstats.com/","applicationCategory":"UtilityApplication","operatingSystem":"Any (web browser)","description":"A free, private tool that reads your social media feed and shows what the algorithm is training you to be, feel and buy. Non-partisan, on-device, open-source.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Jon Hammant"},"isAccessibleForFree":true}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a filter bubble or echo chamber?","acceptedAnswer":{"@type":"Answer","text":"A filter bubble is the narrowed, personalised slice of content an algorithm decides to show you, reinforcing what you already believe while quietly hiding opposing views. doomscrollstats.com makes that invisible shaping visible."}},{"@type":"Question","name":"Is doomscrollstats.com free?","acceptedAnswer":{"@type":"Answer","text":"Yes, completely free, with no ads and no account required."}},{"@type":"Question","name":"Do you store my feed or my data?","acceptedAnswer":{"@type":"Answer","text":"No. Text feeds are read on your device; image feeds are read once by an AI and immediately discarded. Only anonymous aggregate counts are kept, never your feed."}},{"@type":"Question","name":"Is it politically biased?","acceptedAnswer":{"@type":"Answer","text":"No. It is non-partisan by construction: a hard-left and a hard-right feed of equal intensity score the same."}},{"@type":"Question","name":"Which platforms does it work with?","acceptedAnswer":{"@type":"Answer","text":"X (Twitter), Instagram, TikTok, YouTube, Reddit, LinkedIn and Facebook."}},{"@type":"Question","name":"How do I check my feed?","acceptedAnswer":{"@type":"Answer","text":"Take 15 to 20 screenshots of your For You or home feed as you scroll, or screen-record it for a minute, then drop them in."}}]}</script>
 <footer>
   <b>doomscrollstats.com</b> is a free, open, ad-free tool. Your feed is read by an AI (Amazon Nova) and instantly discarded — or fully on your device if you pick Quick. <b>Nothing about you is ever stored</b>.
   Outlet positions are approximate, from public media-bias ratings, and used only to show <em>relative</em> distance.
@@ -750,7 +797,8 @@ function render(v){
   $$(".view").forEach(x=>x.classList.remove("on"));
   $("#view-"+v).classList.add("on");
   CURVIEW=v;
-  const sp=$("#stepper"); sp.style.display = (v==="login"||v==="about"||v==="method"||v==="compare"||v==="parent")?"none":"flex";
+  const sp=$("#stepper"); sp.style.display = (v==="login"||v==="about"||v==="method"||v==="compare"||v==="parent"||v==="stats")?"none":"flex";
+  if(v==="stats"&&window.loadStateFeed)window.loadStateFeed();
   const idx=STEPS.indexOf(v);
   $$("#stepper .st").forEach((st,i)=>{st.classList.toggle("on",i===idx);st.classList.toggle("done",i<idx);});
   if(v==="upload"){                                  // always reset a clean, correct upload view
@@ -786,6 +834,40 @@ function copyKidMessage(){
   else toast("Clipboard unavailable");
 }
 window.copyKidMessage=copyKidMessage;
+/* ---- public "State of the Feed" ---- */
+async function loadStateFeed(){
+  const body=$("#stats-body"); if(!body)return;
+  body.innerHTML='<p style="text-align:center;color:var(--muted);padding:30px 0">loading the numbers…</p>';
+  let d=null; try{ d=await fetch(API_URL,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({state:1})}).then(r=>r.json()); }catch(e){}
+  if(!d||d.error){ body.innerHTML='<p style="text-align:center;color:var(--muted);padding:30px 0">Couldn\'t load the numbers right now — try again shortly.</p>'; return; }
+  renderStateFeed(d);
+}
+window.loadStateFeed=loadStateFeed;
+function renderStateFeed(d){
+  const body=$("#stats-body"),total=d.total||0;
+  if(total<8){body.innerHTML='<div class="card"><div class="card-b" style="text-align:center;color:var(--ink-2);padding:26px 16px">📊 Not enough reads yet — this page fills up as people analyse their feeds. Check back soon.<div style="color:var(--muted);font-size:13px;margin-top:8px">'+total+' so far</div></div></div>';return;}
+  const buckets=d.buckets||[],lab=["0–9","10s","20s","30s","40s","50s","60s","70s","80s","90s"];
+  const bcol=i=>i>=7?"var(--good)":i>=5?"var(--warn)":i>=3?"var(--serious)":"var(--crit)";
+  const bmax=Math.max(1,...buckets);
+  const dist=buckets.map((n,i)=>'<div class="sf-row"><span class="sf-l">'+lab[i]+'</span><div class="sf-track"><i style="width:'+Math.round(n/bmax*100)+'%;background:'+bcol(i)+'"></i></div><b>'+n+'</b></div>').join('');
+  const platName={x:"X",instagram:"Instagram",tiktok:"TikTok",youtube:"YouTube",reddit:"Reddit",linkedin:"LinkedIn",facebook:"Facebook"};
+  const plats=Object.entries(d.platforms||{}).sort((a,b)=>b[1]-a[1]),pmax=Math.max(1,...plats.map(p=>p[1]));
+  const platHtml=plats.length?plats.map(([k,n])=>'<div class="sf-row"><span class="sf-l">'+(platName[k]||k)+'</span><div class="sf-track"><i style="width:'+Math.round(n/pmax*100)+'%;background:var(--accent)"></i></div><b>'+n+'</b></div>').join(''):'<p style="color:var(--muted)">Building…</p>';
+  const archs=Object.entries(d.archetypes||{}).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const atot=Object.values(d.archetypes||{}).reduce((a,b)=>a+b,0)||1;
+  const archHtml=archs.length?archs.map(([k,n])=>'<div class="sf-arch"><span>'+k+'</span><b>'+Math.round(n/atot*100)+'%</b></div>').join(''):'<p style="color:var(--muted)">Building…</p>';
+  body.innerHTML=
+    '<div class="sf-tiles">'+
+      '<div class="card sf-tile"><div class="sf-big">'+total.toLocaleString()+'</div><div class="sf-cap">feeds read</div></div>'+
+      (d.avgOutrage!=null?'<div class="card sf-tile"><div class="sf-big" style="color:var(--crit)">'+d.avgOutrage+'<span>/100</span></div><div class="sf-cap">avg outrage / heat</div></div>':'')+
+      (d.avgSlop!=null?'<div class="card sf-tile"><div class="sf-big" style="color:var(--warn)">'+d.avgSlop+'%</div><div class="sf-cap">avg AI / bot slop</div></div>':'')+
+    '</div>'+
+    '<div class="card" style="margin-top:14px"><div class="card-h"><div class="k">Balance</div><div class="t">How bubbled feeds are (higher = healthier)</div></div><div class="card-b">'+dist+'</div></div>'+
+    '<div class="card" style="margin-top:14px"><div class="card-h"><div class="k">Platforms</div><div class="t">Which feeds people check</div></div><div class="card-b">'+platHtml+'</div></div>'+
+    '<div class="card" style="margin-top:14px"><div class="card-h"><div class="k">Archetypes</div><div class="t">The most common reads</div></div><div class="card-b">'+archHtml+'</div></div>'+
+    '<p style="text-align:center;color:var(--muted);font-size:12px;margin-top:16px">Anonymous counts only — never anyone\'s feed. Updates live.</p>';
+}
+window.renderStateFeed=renderStateFeed;
 /* ---- opt-in short share code (stores a snapshot server-side; TTL ~13 months) ---- */
 async function createShareLink(){
   if(!(typeof LASTPOSTS!=="undefined"&&LASTPOSTS.length)){toast("Analyse a feed first");return;}
@@ -1364,14 +1446,15 @@ function renderHistory(){
   $("#history").innerHTML='<div class="hist">'+rows.join('')+
     '</div><div class="how" style="border:none;padding-top:8px">'+trendTxt+leanTxt+' <span style="color:var(--good)">▲</span>/<span style="color:var(--crit)">▼</span> = change from your previous check. Kept on your device only.</div>';
 }
-async function pingAgg(score){
+async function pingAgg(st){
   try{
-    const r=await fetch(API_URL,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({stat:score})});
+    const body={stat:st.score, plat:PLATFORM, arch:(ARCH&&ARCH.n)||"", heat:Math.round((st.meanHeat||0)*100), slop:(REPORT&&typeof REPORT.aiSlopPct==="number")?REPORT.aiSlopPct:null};
+    const r=await fetch(API_URL,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
     if(!r.ok)return;const d=await r.json();
     if(d&&typeof d.moreBubbledThan==="number"&&d.samples>=8){
       $("#agg-card").style.display="";
       $("#agg").innerHTML='<div class="read-highlight">You\'re more bubbled than <b>'+d.moreBubbledThan+'%</b> of feeds.</div>'+
-        '<div class="how" style="border:none;padding-top:0">Across '+d.samples.toLocaleString()+' feeds analysed on doomscrollstats.com. Lower balance = more bubbled. Only the number is stored — never your feed.</div>';
+        '<div class="how" style="border:none;padding-top:0">Across '+d.samples.toLocaleString()+' feeds analysed on doomscrollstats.com. Lower balance = more bubbled. Only the number is stored — never your feed. <button class="lnk" onclick="go(\'stats\')" style="color:var(--accent);font-weight:700">📊 See the State of the Feed →</button></div>';
     }
   }catch(e){}
 }
@@ -1413,7 +1496,7 @@ function analyse(posts,title,report,skipSave){LASTPOSTS=posts;LASTTITLE=title||"
   renderReport(REPORT);renderAccounts(REPORT.accounts);renderSuggestions(REPORT.suggestions);
   if(!skipSave){saveHistory(st);
     const realSignal=posts.length>=6 && (st.spread>0.05 || Math.abs(st.meanLean)>0.05 || st.meanHeat>0.1);
-    if(realSignal)pingAgg(st.score);   // don't feed the shared aggregate a thin/no-signal default score
+    if(realSignal)pingAgg(st);   // don't feed the shared aggregate a thin/no-signal default score
   }renderHistory();
   const vis=VISUAL.has(PLATFORM);  // hide the political (X-only) cards on visual platforms
   ["#compass","#spectrum","#leanbar"].forEach(sel=>{const e2=$(sel),c=e2&&e2.closest(".card");if(c)c.style.display=vis?"none":"";});
@@ -1551,6 +1634,7 @@ analyse(PERSONAS.doom.posts,PERSONAS.doom.title,null,true);
 if(SHARE_CODE)loadShared(SHARE_CODE);   // opening a shared link → fetch that snapshot and show it
 })();
 </script>
+
 
 
 

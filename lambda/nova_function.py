@@ -70,18 +70,42 @@ def _load_share(code):
     except Exception as e:
         return _resp(500, {"error": str(e)[:120]})
 
-def _stats(score, ip=""):
-    """Anonymous aggregate: bucket the balance score, return how bubbled vs everyone. Stores only a counter."""
+def _stats(score, ip="", extra=None):
+    """Anonymous aggregate: bucket the balance score + roll up platform / archetype / outrage / AI-slop
+    for the public 'State of the Feed' page. Stores ONLY counters — never any feed content or PII."""
     try:
         score = max(0, min(100, int(score)))
     except (TypeError, ValueError):
         return _resp(400, {"error": "bad score"})
     b = min(9, score // 10)
+    extra = extra if isinstance(extra, dict) else {}
+    names = {"#b": "b" + str(b), "#rd": "reads"}
+    adds = ["#b :one", "#rd :one"]
+    vals = {":one": {"N": "1"}}
+    try:
+        heat = int(extra.get("heat"))
+        if 0 <= heat <= 100:
+            names["#hs"] = "heatsum"; names["#hn"] = "heatn"
+            adds += ["#hs :h", "#hn :one"]; vals[":h"] = {"N": str(heat)}
+    except (TypeError, ValueError):
+        pass
+    try:
+        slop = int(extra.get("slop"))
+        if 0 <= slop <= 100:
+            names["#ss"] = "slopsum"; names["#sn"] = "slopn"
+            adds += ["#ss :s", "#sn :one"]; vals[":s"] = {"N": str(slop)}
+    except (TypeError, ValueError):
+        pass
+    plat = re.sub(r"[^a-z]", "", str(extra.get("plat", "")).lower())[:16]
+    if plat:
+        names["#p"] = "plat#" + plat; adds.append("#p :one")
+    arch = re.sub(r"[^A-Za-z0-9 ]", "", str(extra.get("arch", "")))[:40].strip()
+    if arch:
+        names["#a"] = "arch#" + arch; adds.append("#a :one")
     try:
         _ddb.update_item(TableName=AGG_TABLE, Key={"id": {"S": "scores"}},
-                         UpdateExpression="ADD #k :one",
-                         ExpressionAttributeNames={"#k": "b" + str(b)},
-                         ExpressionAttributeValues={":one": {"N": "1"}})
+                         UpdateExpression="ADD " + ", ".join(adds),
+                         ExpressionAttributeNames=names, ExpressionAttributeValues=vals)
         item = _ddb.get_item(TableName=AGG_TABLE, Key={"id": {"S": "scores"}}).get("Item", {})
         counts = [int(item.get("b" + str(i), {}).get("N", "0")) for i in range(10)]
         total = sum(counts) or 1
@@ -90,6 +114,22 @@ def _stats(score, ip=""):
         return _resp(200, {"moreBubbledThan": more_bubbled, "samples": total})
     except Exception as e:
         return _resp(200, {"moreBubbledThan": None, "samples": 0, "error": str(e)[:120]})
+
+def _statefeed():
+    """Public 'State of the Feed' aggregate — counters only, no feed content, no PII."""
+    try:
+        item = _ddb.get_item(TableName=AGG_TABLE, Key={"id": {"S": "scores"}}).get("Item", {})
+        buckets = [int(item.get("b" + str(i), {}).get("N", "0")) for i in range(10)]
+        heatsum = int(item.get("heatsum", {}).get("N", "0")); heatn = int(item.get("heatn", {}).get("N", "0"))
+        slopsum = int(item.get("slopsum", {}).get("N", "0")); slopn = int(item.get("slopn", {}).get("N", "0"))
+        plats = {k[5:]: int(v.get("N", "0")) for k, v in item.items() if k.startswith("plat#")}
+        archs = {k[5:]: int(v.get("N", "0")) for k, v in item.items() if k.startswith("arch#")}
+        return _resp(200, {"total": sum(buckets), "buckets": buckets,
+                           "avgOutrage": round(heatsum / heatn) if heatn else None,
+                           "avgSlop": round(slopsum / slopn) if slopn else None,
+                           "platforms": plats, "archetypes": archs})
+    except Exception as e:
+        return _resp(500, {"error": str(e)[:120]})
 
 RL_LIMIT = 30  # backup bot protection: max requests per minute per IP
 def _rate_ok(ip):
@@ -165,12 +205,14 @@ def lambda_handler(event, context):
     if not _rate_ok(ip):
         return _resp(429, {"error": "too many requests — please slow down"})
     try:
+        if data.get("state"):
+            return _statefeed()
         if data.get("save") is not None:
             return _save_share(data.get("save"))
         if data.get("load") is not None:
             return _load_share(data.get("load"))
         if data.get("stat") is not None:
-            return _stats(data.get("stat"), ip)
+            return _stats(data.get("stat"), ip, data)
         platform = str(data.get("platform", "x")).lower()
         if platform not in PLATFORM_FRAME:
             platform = "x"
