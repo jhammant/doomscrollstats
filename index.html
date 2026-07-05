@@ -209,6 +209,27 @@ var GA_ID = "";
   .sharelink-row .link-note{font-size:11.5px;color:var(--muted);max-width:440px;margin:8px auto 0;line-height:1.5;}
   #sharelink{display:flex;gap:8px;max-width:460px;margin:12px auto 0;align-items:center;}
   #sharelink input{flex:1;background:var(--surface-2);color:var(--ink);border:1px solid var(--hair-2);border-radius:9px;padding:9px 11px;font:inherit;font-size:13px;min-width:0;}
+  .linkbox{display:flex;gap:8px;margin:8px 0 0;}
+  .linkbox input{flex:1;background:var(--surface-2);color:var(--ink);border:1px solid var(--hair-2);border-radius:9px;padding:10px 12px;font:inherit;font-size:13px;min-width:0;}
+  .cmp-step{font-size:14px;color:var(--ink-2);font-weight:600;}
+  .cmp-step b{display:inline-flex;width:20px;height:20px;border-radius:50%;background:var(--accent);color:var(--accent-ink);align-items:center;justify-content:center;font-size:12px;margin-right:8px;}
+  #compare-body{margin-top:18px;}
+  .cmp-cols{display:flex;align-items:stretch;gap:10px;}
+  .cmp-col{flex:1;background:var(--surface);border:1px solid var(--v,var(--hair-2));border-radius:14px;padding:16px 12px;text-align:center;box-shadow:inset 0 0 44px -22px var(--v);}
+  .cmp-who{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:700;}
+  .cmp-em{font-size:40px;margin:6px 0 2px;}
+  .cmp-nm{font-weight:800;font-size:16px;line-height:1.15;}
+  .cmp-sc{font-size:30px;font-weight:800;margin-top:8px;}.cmp-sc span{font-size:12px;color:var(--muted);font-weight:600;}
+  .cmp-pct{font-size:12px;color:var(--ink-2);margin-top:2px;}
+  .cmp-vs{align-self:center;font-weight:800;color:var(--muted);font-size:13px;}
+  .cmp-bars{margin-top:16px;display:flex;flex-direction:column;gap:14px;}
+  .cmp-bar .cmp-bl{font-size:12.5px;color:var(--ink-2);font-weight:700;margin-bottom:2px;}
+  .cmp-brow{display:flex;align-items:center;gap:8px;font-size:12px;margin-top:5px;}
+  .cmp-brow>span{width:38px;color:var(--muted);}
+  .cmp-brow>b{width:30px;text-align:right;font-variant-numeric:tabular-nums;}
+  .cmp-track{flex:1;height:9px;background:var(--surface-2);border-radius:99px;overflow:hidden;}
+  .cmp-track i{display:block;height:100%;border-radius:99px;}
+  .cmp-verdict{margin-top:18px;text-align:center;font-size:15px;color:var(--ink);background:var(--surface);border:1px solid var(--hair);border-radius:12px;padding:14px 16px;line-height:1.5;}
   @media(max-width:620px){.share-btn{margin:0 auto;}}
   .radars{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
   @media(max-width:680px){.radars{grid-template-columns:1fr;}}
@@ -357,6 +378,7 @@ var GA_ID = "";
         <span>🆓 <b>Free</b> forever</span>
         <span>⚖️ <b>Non-partisan</b> by design</span>
       </div>
+      <div style="margin-top:20px"><a class="lnk" onclick="go('parent')" style="cursor:pointer;font-size:13.5px">👨‍👧 Doing this with your kids? Read the 2-minute parent guide →</a></div>
     </div>
   </section>
 
@@ -451,6 +473,7 @@ var GA_ID = "";
 
       <div class="sharelink-row">
         <button class="btn ghost" id="link-btn" onclick="createShareLink()" style="width:auto">🔗 Create a share link</button>
+        <button class="btn ghost" onclick="startCompare()" style="width:auto;margin-left:8px">⚖️ Compare with a friend</button>
         <div class="link-note">Opt-in: makes a short link others can open to see this exact read. Nothing is stored unless you tap it (auto-deletes after ~13 months).</div>
         <div id="sharelink" style="display:none">
           <input type="text" readonly onclick="this.select()" aria-label="Your share link">
@@ -582,6 +605,33 @@ var GA_ID = "";
   </div>
 </section>
 
+<section class="view" id="view-parent">
+  <div class="wrap" style="max-width:660px;padding-top:20px;">
+    <div class="page-h"><h2>👨‍👧 Doing this with your kids</h2><p>A calm way to see what their feed is really serving them — together, not over their shoulder.</p></div>
+    <div class="card"><div class="card-b" style="line-height:1.65;color:var(--ink-2)">
+      <p style="margin:0 0 12px"><b style="color:var(--ink)">Make it a shared thing, not an inspection.</b> Sit together and run it on <em>your</em> feed first — seeing your own bubble before theirs is disarming, and it makes the point without any finger-pointing.</p>
+      <p style="margin:0 0 12px"><b style="color:var(--ink)">It's a mirror, not a verdict.</b> It never says anyone's been "radicalised" — it just shows the shape of a feed. Let the result start a conversation, not an argument.</p>
+      <p style="margin:0 0 12px"><b style="color:var(--ink)">Nothing is stored or shared</b> unless you choose to. If you're apart, they can run it and tap <b>"Create a share link"</b> to send you the result.</p>
+      <p style="margin:0"><b style="color:var(--ink)">What to look at together:</b> how much <em>outrage</em> the feed runs on, what it's quietly training them to <em>be, feel &amp; buy</em>, and the viewpoints it never shows them.</p>
+    </div></div>
+    <div class="nav-row"><button class="btn ghost" onclick="goBack()" style="width:auto">← Back</button><button class="btn primary" onclick="go('record')" style="width:auto">Capture a feed together →</button></div>
+  </div>
+</section>
+
+<section class="view" id="view-compare">
+  <div class="wrap" style="max-width:660px;padding-top:20px;">
+    <div class="page-h"><h2>⚖️ Compare feeds</h2><p>See how your bubble stacks up against a friend's. Non-partisan — it's about who's more boxed-in, not who's right.</p></div>
+    <div class="card"><div class="card-b">
+      <div class="cmp-step"><b>1</b> Send a friend your feed:</div>
+      <div class="linkbox"><input id="cmp-mylink" type="text" readonly onclick="this.select()" aria-label="Your compare link"><button class="btn primary" onclick="copyMyCompareLink()" style="width:auto">Copy</button></div>
+      <div class="cmp-step" style="margin-top:18px"><b>2</b> Paste their code or link:</div>
+      <div class="linkbox"><input id="cmp-code" type="text" placeholder="their code or link" aria-label="Friend's code"><button class="btn primary" id="cmp-go" onclick="runCompare()" style="width:auto">Compare →</button></div>
+    </div></div>
+    <div id="compare-body"></div>
+    <div class="nav-row"><button class="btn ghost" onclick="goBack()" style="width:auto">← Back to my result</button></div>
+  </div>
+</section>
+
 <footer>
   <b>doomscrollstats.com</b> is a free, open, ad-free tool. Your feed is read by an AI (Amazon Nova) and instantly discarded — or fully on your device if you pick Quick. <b>Nothing about you is ever stored</b>.
   Outlet positions are approximate, from public media-bias ratings, and used only to show <em>relative</em> distance.
@@ -667,7 +717,7 @@ function render(v){
   $$(".view").forEach(x=>x.classList.remove("on"));
   $("#view-"+v).classList.add("on");
   CURVIEW=v;
-  const sp=$("#stepper"); sp.style.display = (v==="login"||v==="about"||v==="method")?"none":"flex";
+  const sp=$("#stepper"); sp.style.display = (v==="login"||v==="about"||v==="method"||v==="compare"||v==="parent")?"none":"flex";
   const idx=STEPS.indexOf(v);
   $$("#stepper .st").forEach((st,i)=>{st.classList.toggle("on",i===idx);st.classList.toggle("done",i<idx);});
   if(v==="upload"){                                  // always reset a clean, correct upload view
@@ -731,6 +781,53 @@ async function loadShared(code){
   }catch(e){toast("Couldn't open that share link.");}
 }
 window.loadShared=loadShared;
+/* ---- compare with a friend (uses share-codes) ---- */
+function currentSnap(){return {v:1,plat:PLATFORM,posts:LASTPOSTS.slice(0,40).map(p=>({a:p.author,t:p.text,l:p.lean,h:p.heat,k:p.topic,e:p.emo,b:p.bot})),report:REPORT};}
+async function startCompare(){
+  if(!(typeof LASTPOSTS!=="undefined"&&LASTPOSTS.length)){toast("Analyse your feed first");return;}
+  go("compare");
+  const out=$("#cmp-mylink"); if(out){out.value="creating your link…";
+    try{const r=await fetch(API_URL,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({save:currentSnap()})});const d=await r.json();
+      out.value=(d&&d.code)?location.origin+"/#c="+d.code:"(couldn't create a link — check connection)";}
+    catch(e){out.value="(offline — couldn't create a link)";}
+  }
+}
+window.startCompare=startCompare;
+function copyMyCompareLink(){const inp=$("#cmp-mylink");if(inp&&/^https?:/.test(inp.value)){inp.select();try{navigator.clipboard.writeText(inp.value);}catch(e){}toast("Copied 🔗 — send it to a friend");}}
+window.copyMyCompareLink=copyMyCompareLink;
+async function runCompare(){
+  const raw=(($("#cmp-code")||{}).value||"").trim();
+  const code=(raw.match(/[#&]c=([A-Za-z0-9]+)/)||[])[1]||raw.replace(/[^A-Za-z0-9]/g,"");
+  if(!code){toast("Paste your friend's code or link");return;}
+  if(!(typeof LASTPOSTS!=="undefined"&&LASTPOSTS.length)){toast("Analyse your own feed first");return;}
+  const btn=$("#cmp-go"); if(btn){btn.disabled=true;btn.textContent="loading…";}
+  try{
+    const r=await fetch(API_URL,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({load:code})});
+    const d=await r.json();
+    if(d&&d.snap&&Array.isArray(d.snap.posts)&&d.snap.posts.length){
+      const theirs=d.snap.posts.map(p=>{const q=P(p.a||"",p.a||"",p.t||"",c1(p.l),c01(p.h),normTopic(p.k),normEmo(p.e));q.bot=c01(p.b);return q;});
+      renderCompare(LASTPOSTS,theirs,d.snap.plat||"?");
+    } else toast("That code didn't work — check it and try again.");
+  }catch(e){toast("Couldn't load that comparison.");}
+  if(btn){btn.disabled=false;btn.textContent="Compare →";}
+}
+window.runCompare=runCompare;
+function renderCompare(mine,theirs,theirPlat){
+  const sa=stats(mine),sb=stats(theirs),aa=archetypeOf(mine,sa),ab=archetypeOf(theirs,sb);
+  const myName=(PLAT_INFO[PLATFORM]&&PLAT_INFO[PLATFORM].name)||"Your";
+  const thName=(PLAT_INFO[theirPlat]&&PLAT_INFO[theirPlat].name)||"Their";
+  const col=(who,st,a)=>'<div class="cmp-col" style="--v:'+a.v+'"><div class="cmp-who">'+who+'</div><div class="cmp-em">'+a.e+'</div><div class="cmp-nm" style="color:'+a.v+'">'+a.n+'</div><div class="cmp-sc">'+st.score+'<span>/100</span></div><div class="cmp-pct">'+a.pct.replace(/[^\x20-\x7E]/g,"").trim()+'</div></div>';
+  const bar=(label,av,bv)=>{const mx=Math.max(av,bv,1);return '<div class="cmp-bar"><div class="cmp-bl">'+label+'</div>'+
+    '<div class="cmp-brow"><span>You</span><div class="cmp-track"><i style="width:'+Math.round(av/mx*100)+'%;background:var(--accent)"></i></div><b>'+av+'</b></div>'+
+    '<div class="cmp-brow"><span>Them</span><div class="cmp-track"><i style="width:'+Math.round(bv/mx*100)+'%;background:#e0484a"></i></div><b>'+bv+'</b></div></div>';};
+  const more=sa.score<sb.score-2?"🫧 <b>You're in the tighter bubble.</b>":sa.score>sb.score+2?"🌤️ <b>Your friend's in the tighter bubble.</b>":"You're about equally bubbled.";
+  const hot=sa.meanHeat>sb.meanHeat+.06?" Your feed also runs angrier.":sb.meanHeat>sa.meanHeat+.06?" Their feed runs angrier than yours.":"";
+  $("#compare-body").innerHTML=
+    '<div class="cmp-cols">'+col(myName+" (you)",sa,aa)+'<div class="cmp-vs">vs</div>'+col(thName,sb,ab)+'</div>'+
+    '<div class="cmp-bars">'+bar("Balance (higher = healthier)",sa.score,sb.score)+bar("Outrage / heat",Math.round(sa.meanHeat*100),Math.round(sb.meanHeat*100))+bar("Lean (distance from centre)",Math.round(Math.abs(sa.meanLean)*100),Math.round(Math.abs(sb.meanLean)*100))+'</div>'+
+    '<div class="cmp-verdict">'+more+hot+'</div>';
+}
+window.renderCompare=renderCompare;
 window.addEventListener("popstate",function(e){ render(e.state&&e.state.v?e.state.v:"login"); });
 try{ if(!history.state)history.replaceState({v:"login"},"",location.pathname+location.search); }catch(e){}
 
@@ -1001,21 +1098,35 @@ function renderRadar(id,keys,you,base,mx){const svg=$(id);svg.innerHTML="";const
   const a2=el("text",{x:90,y:H-5,fill:"var(--ink-2)","font-size":"10.5"},g);a2.textContent="Calm diet";}
 
 let ARCH={n:"",e:"",tag:"",pct:"",vibe:"#37d6c4"};
-function renderArch(posts,st){
+function archetypeOf(posts,st){
   const ts=shares(posts,TOPICS,"topic");let tK="Politics",tm=0;TOPICS.forEach(k=>{if(ts[k]>tm){tm=ts[k];tK=k;}});
+  const es=shares(posts,EMOS,"emo");let eK="Curiosity",em=0;EMOS.forEach(k=>{if(es[k]>em){em=es[k];eK=k;}});
+  const slop=posts.reduce((s,p)=>s+(p.bot||0),0)/(posts.length||1);
   const left=st.meanLean<0;let a;
-  if(st.meanHeat>=.72)a={e:"🌪️",n:"The Doom Spiral",v:"#e0484a",t:"Your feed is basically an outrage vending machine — and it keeps handing you tokens. Not your fault; that's the product."};
-  else if(tm>=.5&&(tK==="Politics"||tK==="Culture")&&st.meanHeat>=.5)a={e:"⚔️",n:"The Culture Warrior",v:"#ec835a",t:"Every scroll is a battle. The algorithm clocked that you fight back — so it ordered more."};
+  if(slop>=.5)a={e:"🤖",n:"The Slop Trough",v:"#8a8f98",t:"Over half of this is AI-generated, engagement-farmed filler. The algorithm gave up showing you people — it just serves bait now."};
+  else if(st.meanHeat>=.72)a={e:"🌪️",n:"The Doom Spiral",v:"#e0484a",t:"Basically an outrage vending machine — and it keeps handing you tokens. Not your fault; that's the product."};
+  else if(st.meanHeat>=.55&&eK==="Fear")a={e:"😰",n:"The Anxiety Drip",v:"#c0568f",t:"It keeps you quietly scared about the world — because frightened people don't put the phone down."};
+  else if(st.meanHeat>=.5&&(tK==="Politics"||tK==="Culture"))a={e:"⚔️",n:"The Culture Warrior",v:"#ec835a",t:"Every scroll is a battle. The algorithm clocked that you fight back — so it ordered more."};
+  else if(Math.abs(st.meanLean)>=.45&&st.spread<.24)a={e:left?"🔵":"🔴",n:left?"The Left Echo":"The Right Echo",v:left?"#3987e5":"#e66767",t:"You're filed under Team "+(left?"Blue":"Red")+", and the away fixtures quietly stopped showing up."};
+  else if(tm>=.5&&(tK==="Tech"||tK==="Economy"))a={e:"💸",n:"The Hustle Machine",v:"#f0b429",t:"Convinced you're one side-hustle, one app, one 5am routine away from freedom. Keep grinding, champ."};
+  else if(tm>=.5&&tK==="Culture")a={e:"💅",n:"The Aspiration Engine",v:"#d96fb0",t:"Selling you a life just out of reach — the body, the trip, the kitchen. Aspiration is the whole business model."};
+  else if(tm>=.5&&tK==="Sport")a={e:"🏟️",n:"The Superfan",v:"#28c76f",t:"All match, all the time. Wholesome, honestly — the algorithm just really wants you to have one hobby."};
   else if(tm>=.5)a={e:"🔭",n:"The One-Track Feed",v:"#9085e9",t:"Your algorithm decided you have exactly one interest ("+tK.toLowerCase()+"). Bold of it."};
-  else if(Math.abs(st.meanLean)>=.45&&st.spread<.24)a={e:left?"🔵":"🔴",n:left?"The Left Echo":"The Right Echo",v:left?"#3987e5":"#e66767",t:"Your algorithm has you filed under Team "+(left?"Blue":"Red")+" and quietly stopped showing you the away fixtures."};
-  else if(st.score>=72&&st.meanHeat<.4)a={e:"🧘",n:"The Zen Centrist",v:"#28c76f",t:"Cool as a cucumber — and it actually lets the other side in. Your feed forgot to make you angry today. Rare."};
+  else if(st.meanHeat<.32&&eK==="Humor")a={e:"😂",n:"The Distraction Machine",v:"#38b6c4",t:"Endlessly amusing, mostly harmless — and very good at making sure you never quite look up."};
+  else if(st.score>=74&&st.meanHeat<.4)a={e:"🧘",n:"The Zen Centrist",v:"#28c76f",t:"Cool as a cucumber — and it lets the other side in. Your feed forgot to make you angry today. Rare."};
+  else if(st.score>=68&&st.spread>=.34)a={e:"🌍",n:"The Window Seat",v:"#28c76f",t:"A real view of the world — many topics, many sides, not much rage. You're doing something right."};
   else if(Math.abs(st.meanLean)>=.22)a={e:"🧭",n:left?"Drifting Left":"Drifting Right",v:left?"#3987e5":"#e66767",t:"Still a bit of everything — but the walls are quietly inching "+(left?"left":"right")+"."};
+  else if(st.spread<.2&&st.meanHeat<.4)a={e:"🫧",n:"The Comfort Bubble",v:"#7c9fe0",t:"Calm, cosy, and everyone agrees with you — which is exactly how you don't notice the walls."};
   else a={e:"🥗",n:"The Balanced Diet",v:"#28c76f",t:"A genuine spread of views and moods. Whatever you're doing, keep doing it."};
   // Describe THIS feed honestly from its own balance score — the real "vs other feeds" comparison lives only in the aggregate card, so we never show a made-up percentile here.
   const pct=st.score>=72?"Well balanced 🌤️":st.score>=55?"Fairly balanced 🍃":st.score>=38?"Somewhat bubbled 🫧":"Heavily bubbled 🫧";
+  return {e:a.e,n:a.n,v:a.v,t:a.t,pct};
+}
+function renderArch(posts,st){
+  const a=archetypeOf(posts,st);
   const arch=$("#arch");arch.style.setProperty("--vibe",a.v+"2b");arch.style.setProperty("--vibe-solid",a.v+"aa");
-  $("#a-emoji").textContent=a.e;$("#a-name").textContent=a.n;$("#a-name").style.color=a.v;$("#a-tag").textContent=a.t;$("#a-pct").textContent=pct;
-  ARCH={n:a.n,e:a.e,tag:a.t,pct,vibe:a.v};
+  $("#a-emoji").textContent=a.e;$("#a-name").textContent=a.n;$("#a-name").style.color=a.v;$("#a-tag").textContent=a.t;$("#a-pct").textContent=a.pct;
+  ARCH={n:a.n,e:a.e,tag:a.t,pct:a.pct,vibe:a.v};
 }
 function renderVerdict(st){
   $("#score").textContent=st.score;
@@ -1306,7 +1417,7 @@ function classifyPaste(raw){return raw.split(/\n+/).map(s=>s.trim()).filter(s=>s
 function openShare(){drawCard();const wb=$("#webshare-btn");if(wb)wb.style.display=(navigator.share)?"block":"none";$("#modal").classList.add("on");}
 function closeShare(){$("#modal").classList.remove("on");}
 window.openShare=openShare;window.closeShare=closeShare;
-function captionText(){const hl=(REPORT&&REPORT.highlight)?REPORT.highlight:ARCH.n;return ARCH.e+" My feed is: "+hl+" — "+(ARCH.pct||"").replace(/[^\x20-\x7E]/g,"").trim()+". What's yours? → doomscrollstats.com";}
+function captionText(){const hl=(REPORT&&REPORT.highlight)?REPORT.highlight:ARCH.n;return ARCH.e+" I'm “"+ARCH.n+"” — my feed is: "+hl+" ("+(ARCH.pct||"").replace(/[^\x20-\x7E]/g,"").trim()+"). What's yours? → doomscrollstats.com #whatsyourfeed";}
 async function shareResult(){                       // native share sheet — best on mobile (straight to Instagram/TikTok/anywhere) with the card image attached
   const cap=captionText();
   try{
@@ -1395,6 +1506,7 @@ analyse(PERSONAS.doom.posts,PERSONAS.doom.title,null,true);
 if(SHARE_CODE)loadShared(SHARE_CODE);   // opening a shared link → fetch that snapshot and show it
 })();
 </script>
+
 
 
 
