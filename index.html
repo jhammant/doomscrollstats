@@ -791,6 +791,7 @@ function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");setT
 /* ---------- navigation ---------- */
 const STEPS=["record","upload","dash"];
 const SHARE_CODE=(location.hash.match(/[#&]c=([A-Za-z0-9]+)/)||[])[1]||"";  // captured before history rewrites the hash
+const BOOT_VIEW=(location.hash.match(/^#([a-z]+)$/)||[])[1]||"";              // ditto — a deep link like #stats must survive the replaceState below
 let CURVIEW="login";
 function render(v){
   if(!$("#view-"+v))v="login";
@@ -1632,6 +1633,10 @@ $("#modal").addEventListener("click",e=>{if(e.target===$("#modal"))closeShare();
 /* pre-render a sample so dashboard isn't empty if opened directly (skipSave — don't pollute history) */
 analyse(PERSONAS.doom.posts,PERSONAS.doom.title,null,true);
 if(SHARE_CODE)loadShared(SHARE_CODE);   // opening a shared link → fetch that snapshot and show it
+else{                                  // deep link straight to a static view (#stats, #about…) — the app puts these in the URL, so they must survive a reload/share
+  const bv=BOOT_VIEW;
+  if(["stats","about","method","parent","record"].indexOf(bv)>=0&&$("#view-"+bv)){render(bv);try{history.replaceState({v:bv},"","#"+bv);}catch(e){}}
+}
 })();
 </script>
 
