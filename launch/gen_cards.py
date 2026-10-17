@@ -2,7 +2,7 @@
 """Generate the doomscrollstats.com LinkedIn launch carousel (4x 1080x1350, devprint style)."""
 import subprocess, os
 W,H=1080,1350
-OUT="/Users/jhammant/dev/doomscrollstats/launch"
+OUT="/Users/jhammant/dev/founder/doomscrollstats/launch"
 os.makedirs(OUT,exist_ok=True)
 
 DEFS='''
