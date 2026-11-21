@@ -632,7 +632,7 @@ var GA_ID = "";
     <h2 style="font-size:17px;margin:26px 0 8px;">Honest limitations</h2>
     <p class="ab-p">Classifying short posts and images is inherently uncertain. Account lean is solid for well-known accounts and a <b>rough guess</b> for small ones. The "% bot" figure and news-outlet positions are estimates, not facts. Treat every score as a <b>conversation starter, not a verdict</b>.</p>
     <h2 style="font-size:17px;margin:26px 0 8px;">Privacy</h2>
-    <p class="ab-p">No account, no tracking cookies. Text feeds never leave your device. Image feeds are read once and discarded — <b>nothing about you is stored</b>. The code is open source.</p>
+    <p class="ab-p">No account, no tracking cookies. Text feeds never leave your device. Image feeds are read once and discarded — <b>nothing about you is stored</b>. We count page views with a cookieless counter: no cookies, no ads, no profile of you. The code is open source.</p>
     <button class="btn ghost" onclick="goBack()" style="width:auto;margin-top:26px;">← Back</button>
   </div>
 </section>
@@ -1656,6 +1656,15 @@ else{                                  // deep link straight to a static view (#
 
 
 
-
+<script>
+/* Page-view count for the hosted site only: cookieless, and a fork or local copy loads nothing.
+   Keep this the LAST element in <body>. The app script above takes a share code (#c=...) out of the
+   address first, and the loader is skipped altogether if one is still there. */
+(function(){
+  if(!/(^|\.)doomscrollstats\.com$/.test(location.hostname)) return;
+  if(/[#&]c=/.test(location.hash)) return;
+  var s=document.createElement("script"); s.src="https://hammantlabs.com/a.js"; document.body.appendChild(s);
+})();
+</script>
 </body>
 </html>

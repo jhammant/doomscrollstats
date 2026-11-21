@@ -27,7 +27,7 @@ Works on **X/Twitter, Instagram, TikTok, YouTube, LinkedIn, Reddit and Facebook.
 | **Read** | on-device OCR (Tesseract.js) → on-device model *or* Nova Micro | frames → **Amazon Nova Pro** vision |
 | **Analyse** | lean · heat · topic · bot per post + a narrative report | same, from the images |
 
-**Privacy:** no accounts, no tracking cookies. Text feeds are read **on your device**. Image feeds are sent to the model and **immediately discarded — nothing about you is stored.**
+**Privacy:** no accounts, no tracking cookies. Text feeds are read **on your device**. Image feeds are sent to the model and **immediately discarded — nothing about you is stored.** The hosted site counts page views with a cookieless counter: no cookies, no ads, no profile of you. It loads only on `doomscrollstats.com`, so your own copy reports nothing.
 
 ## Architecture
 
